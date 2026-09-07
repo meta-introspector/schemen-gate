@@ -2,6 +2,15 @@
 
 All notable changes to Schemen Gate are documented here.
 
+## Unreleased
+
+- Add an optional, separately packaged credential broker under
+  `services/credential-broker/`, with encrypted credential storage, tenant and
+  subject access checks, constrained HTTP proxying, credential and master-key
+  rotation, and adversarial integration tests.
+- Keep the core package version, dependencies, entry points, and release
+  artifacts unchanged; broker installation and release are separate actions.
+
 ## 1.0.2 - Production-ready release candidate
 
 - Continue at the next unused semantic version without moving or reusing an

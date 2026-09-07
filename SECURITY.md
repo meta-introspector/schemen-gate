@@ -4,6 +4,12 @@
 
 Security fixes are applied to the latest 1.x release line.
 
+The optional `schemen-credential-broker` distribution has its own version line
+and [security contract](services/credential-broker/SECURITY.md). Reports about
+the broker use the same private reporting channel below; include both its
+package version and repository commit. A Gate library release does not imply a
+broker package release.
+
 ## Reporting a vulnerability
 
 When the canonical repository is public and private vulnerability reporting is

@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel==0.47.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "schemen-credential-broker"
+version = "0.1.1"
+description = "Encrypted credential custody and a constrained HTTP broker"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = ["cryptography>=50,<52", "httpx>=0.28,<0.29", "fastapi>=0.139,<1", "uvicorn>=0.52.4,<1"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+schemen-broker = "credential_broker.cli:main"
+
+[project.urls]
+Repository = "https://github.com/sekosai/schemen-gate"
+Issues = "https://github.com/sekosai/schemen-gate/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E9", "F", "I", "B"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
