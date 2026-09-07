@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
-from collections.abc import Awaitable, Callable
-from typing import Any, NoReturn
+from typing import Any, NoReturn, cast
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 from starlette.concurrency import run_in_threadpool
 
 from .broker import Broker
+from .guard import RequestGuard
 from .limits import Limits
-from .models import BrokerError, Connection, Principal, canonical, identifier, token_hash
+from .models import BrokerError, Connection, Principal, canonical, identifier
 
 MAX_REQUEST = 65_536
 
@@ -37,33 +36,26 @@ def strict_object(raw: bytes) -> dict[str, Any]:
 
 
 def create_app(broker: Broker, identities: dict[str, Principal]) -> FastAPI:
-    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, redirect_slashes=False)
     identities = dict(identities)
     limits = Limits(list(identities.values()))
     app.state.limits = limits
 
-    def authenticate(request: Request) -> Principal:
-        headers = request.headers.getlist("authorization")
-        if len(headers) != 1 or not headers[0].startswith("Bearer "):
-            raise BrokerError(401, "unauthorized")
-        token = headers[0][7:]
-        if not re.fullmatch(r"[A-Za-z0-9_-]{32,128}", token):
-            raise BrokerError(401, "unauthorized")
-        principal = identities.get(token_hash(token))
-        if principal is None:
-            raise BrokerError(401, "unauthorized")
-        return principal
+    app.add_middleware(RequestGuard, identities=identities, limits=limits)
 
     async def payload(request: Request) -> dict[str, Any]:
-        if request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
+        types = request.headers.getlist("content-type")
+        if len(types) != 1 or types[0].split(";", 1)[0].lower() != "application/json":
             raise BrokerError(415, "json_required")
+        if request.headers.getlist("content-encoding"):
+            raise BrokerError(415, "request_encoding_blocked")
         raw = bytearray()
         try:
             async with asyncio.timeout(10):
                 async for chunk in request.stream():
-                    raw.extend(chunk)
-                    if len(raw) > MAX_REQUEST:
+                    if len(raw) + len(chunk) > MAX_REQUEST:
                         raise BrokerError(413, "request_too_large")
+                    raw.extend(chunk)
         except TimeoutError as exc:
             raise BrokerError(408, "request_timeout") from exc
         try:
@@ -77,33 +69,13 @@ def create_app(broker: Broker, identities: dict[str, Principal]) -> FastAPI:
             {"error": exc.code}, status_code=exc.status, headers={"Cache-Control": "no-store"}
         )
 
-    @app.middleware("http")
-    async def safe_failure(
-        request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
-        try:
-            if request.url.path.startswith("/v1/"):
-                principal = authenticate(request)
-                with limits.admit(principal):
-                    response = await call_next(request)
-            else:
-                response = await call_next(request)
-        except BrokerError as exc:
-            response = JSONResponse({"error": exc.code}, status_code=exc.status)
-        except Exception:
-            # Do not emit request bodies, credentials, URLs or exception messages.
-            response = JSONResponse({"error": "internal_error"}, status_code=500)
-        response.headers["Cache-Control"] = "no-store"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        return response
-
     @app.get("/healthz")
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
     @app.put("/v1/connections/{connection_id}")
     async def put_connection(connection_id: str, request: Request) -> dict[str, object]:
-        principal = authenticate(request)
+        principal = cast(Principal, request.state.principal)
         if not principal.admin:
             raise BrokerError(403, "admin_required")
         identifier(connection_id)
@@ -136,7 +108,7 @@ def create_app(broker: Broker, identities: dict[str, Principal]) -> FastAPI:
 
     @app.delete("/v1/connections/{connection_id}")
     async def delete_connection(connection_id: str, request: Request) -> Response:
-        principal = authenticate(request)
+        principal = cast(Principal, request.state.principal)
         if not principal.admin:
             raise BrokerError(403, "admin_required")
         identifier(connection_id)
@@ -147,7 +119,7 @@ def create_app(broker: Broker, identities: dict[str, Principal]) -> FastAPI:
 
     @app.post("/v1/connections/{connection_id}/request")
     async def proxy(connection_id: str, request: Request) -> Response:
-        principal = authenticate(request)
+        principal = cast(Principal, request.state.principal)
         identifier(connection_id)
         status = 500
         try:
@@ -161,8 +133,7 @@ def create_app(broker: Broker, identities: dict[str, Principal]) -> FastAPI:
             query = data.get("query", {})
             if not isinstance(query, dict) or any(not isinstance(v, str) for v in query.values()):
                 raise BrokerError(400, "invalid_query")
-            result = await run_in_threadpool(
-                broker.request,
+            result = await broker.request(
                 principal,
                 connection_id,
                 data["method"],

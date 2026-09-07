@@ -8,6 +8,9 @@ All notable changes to Schemen Gate are documented here.
   `services/credential-broker/`, with encrypted credential storage, tenant and
   subject access checks, constrained HTTP proxying, credential and master-key
   rotation, and adversarial integration tests.
+- Harden broker 0.1.2 with absolute provider deadlines, admission through
+  response delivery, sanitized CLI failures, strict request framing, and
+  hash-locked application dependencies.
 - Keep the core package version, dependencies, entry points, and release
   artifacts unchanged; broker installation and release are separate actions.
 

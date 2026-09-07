@@ -31,19 +31,28 @@ does not establish that isolation.
 | TLS peer verification | Untrusted TLS fixture is rejected before receiving an HTTP request or credential |
 | Response handling | Redirect, compression and size restrictions; upstream headers suppressed; direct/common encoded secret echoes refused; CLI terminal controls escaped |
 | Administrative audit consistency | Store, rotate and delete changes commit atomically with audit; injected failure tests verify rollback |
-| Bounded use | Admission budgets, tenant connection quota, ACL cap and audit retention; quota, concurrency, HTTP rejection and retention tests |
+| Bounded use | Admission covers response delivery; absolute provider and response-send deadlines; quota, cancellation, slow-provider, slow-consumer and retention regressions |
 | Recovery | Consistent SQLite backup/restore, master-key rotation, and corruption rollback tests |
 
 The implementation uses authenticated encryption from `cryptography`, not a
 custom cipher. The minimum dependency version is 50.0.0. The reproducible
-dependency snapshot is `requirements.lock`; rescan it as advisories change.
+dependency snapshot is `requirements.lock`, with SHA-256 wheel hashes and
+source builds disabled; rescan it as advisories change.
 An absence of advisory matches is not a proof of absence of vulnerabilities.
 
 ## Capacity and failure semantics
 
 - One broker process: at most 16 active authenticated requests globally and four
   per tenant/subject. A principal's tokens share a burst of 30 and refill at two
-  requests per second. Exceeding admission returns 429.
+  requests per second. Exceeding admission returns 429. A slot is held until
+  the response body has been handed to the HTTP server, and released on normal
+  completion, timeout or cancellation. Socket buffers and edge connections
+  additionally depend on the server/ingress limits.
+- Provider I/O has an absolute 20-second deadline across connection, headers
+  and body, in addition to 10-second inactivity timeouts. Response delivery
+  has a separate 10-second deadline; a timeout after response headers aborts
+  delivery and cannot replace the status already sent. Database lock waits
+  have their own five-second timeout; these are not a whole-operation SLA.
 - At most 1,000 connections per tenant and 128 ACL entries per connection.
   Credential replacement remains possible at capacity.
 - Local audit retains the latest 100,000 rows. Export before rollover when

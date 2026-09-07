@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import secrets
+import sys
 from pathlib import Path
 
 from .api import create_app
@@ -43,7 +44,7 @@ def bootstrap(directory: Path) -> None:
     )
 
 
-def main() -> None:
+def run() -> None:
     parser = argparse.ArgumentParser(description="Local credential store and constrained broker")
     sub = parser.add_subparsers(dest="command", required=True)
     init = sub.add_parser("init")
@@ -105,8 +106,22 @@ def main() -> None:
         proxy_headers=False,
         limit_concurrency=32,
         timeout_keep_alive=5,
+        ws="none",
         h11_max_incomplete_event_size=16384,
     )
+
+
+def main() -> None:
+    try:
+        run()
+    except Exception:
+        # Transport exceptions may embed authorization headers. Never print
+        # exception text or tracebacks from this secret-handling command.
+        print(
+            "Broker operation failed; check protected inputs and service availability.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":

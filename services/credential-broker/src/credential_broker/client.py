@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import stat
 from argparse import Namespace
 from pathlib import Path
@@ -24,7 +25,10 @@ def read_secret(path: Path) -> str:
 
 
 def call(args: Namespace) -> int:
-    headers = {"Authorization": "Bearer " + read_secret(args.token_file)}
+    token = read_secret(args.token_file)
+    if not re.fullmatch(r"[A-Za-z0-9_-]{32,128}", token):
+        raise ValueError("invalid broker token file")
+    headers = {"Authorization": "Bearer " + token}
     path = "/v1/connections/" + args.connection
     with httpx.Client(
         base_url=f"http://127.0.0.1:{args.port}",

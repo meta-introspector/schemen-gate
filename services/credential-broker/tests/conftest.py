@@ -72,13 +72,21 @@ def system(tmp_path, request):
             if self.command == "PATCH" and auth:
                 state["writes"] += 1
                 payload = json.dumps({"written": json.loads(body)}).encode()
+            if state.get("delay_headers"):
+                time.sleep(state["delay_headers"])
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Set-Cookie", "secret=" + state["secret"])
             self.send_header("X-Upstream-Secret", state["secret"])
             self.end_headers()
             try:
-                self.wfile.write(payload)
+                if state.get("drip_body"):
+                    for byte in payload:
+                        self.wfile.write(bytes([byte]))
+                        self.wfile.flush()
+                        time.sleep(state["drip_body"])
+                else:
+                    self.wfile.write(payload)
             except (BrokenPipeError, ConnectionResetError):
                 pass
 
