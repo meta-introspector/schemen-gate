@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120"><rect width="1600" height="1120" fill="#0c1422"/>
+<text x="60" y="54" fill="#52dec2" font-family="Arial, sans-serif" font-size="19" font-weight="700">SCHEMEN GATE  /  DELEGATED AUTHORIZATION</text>
+<text x="60" y="123" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="43" font-weight="700">One request. A verifiable pause. One authorized call.</text>
+<text x="60" y="161" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="21" font-weight="400">Authenticated bindings from the original caller through approval, execution and result.</text>
+<text x="60" y="1086" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="16" font-weight="400">BROKER 0.3.0  •  IMPLEMENTATION + ADOPTION GUIDE  •  NO SUBSTRATE REQUIRED</text>
+<text x="1490" y="1090" fill="#52dec2" font-family="Arial, sans-serif" font-size="20" font-weight="700">01</text>
+<rect x="50" y="200" width="270" height="72" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="63" y="230" fill="#52dec2" font-family="Arial, sans-serif" font-size="17" font-weight="700">CALLER</text>
+<text x="63" y="257" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="16" font-weight="400">Human or software</text>
+<path d="M185 285 L185 970" stroke="#2b3e58" stroke-width="2"/>
+<rect x="355" y="200" width="270" height="72" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="368" y="230" fill="#52dec2" font-family="Arial, sans-serif" font-size="17" font-weight="700">AUTHORIZATION SERVICE</text>
+<text x="368" y="257" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="16" font-weight="400">Pinned service key</text>
+<path d="M490 285 L490 970" stroke="#2b3e58" stroke-width="2"/>
+<rect x="660" y="200" width="270" height="72" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="673" y="230" fill="#52dec2" font-family="Arial, sans-serif" font-size="17" font-weight="700">APPROVER</text>
+<text x="673" y="257" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="16" font-weight="400">Owner or delegate</text>
+<path d="M795 285 L795 970" stroke="#2b3e58" stroke-width="2"/>
+<rect x="965" y="200" width="270" height="72" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="978" y="230" fill="#52dec2" font-family="Arial, sans-serif" font-size="17" font-weight="700">GATE + CUSTODY</text>
+<text x="978" y="257" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="16" font-weight="400">Broker execution boundary</text>
+<path d="M1100 285 L1100 970" stroke="#2b3e58" stroke-width="2"/>
+<rect x="1270" y="200" width="270" height="72" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="1283" y="230" fill="#52dec2" font-family="Arial, sans-serif" font-size="17" font-weight="700">GOOGLE CALENDAR</text>
+<text x="1283" y="257" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="16" font-weight="400">Existing OAuth API</text>
+<path d="M1405 285 L1405 970" stroke="#2b3e58" stroke-width="2"/>
+<text x="197" y="312" fill="#8cb8ff" font-family="Arial, sans-serif" font-size="18" font-weight="400">1  Sign exact proposal</text>
+<path d="M185 325 L490 325" stroke="#8cb8ff" stroke-width="2"/>
+<polygon points="490,325 480,320 480,330" fill="#8cb8ff"/>
+<rect x="370" y="352" width="540" height="56" rx="12" fill="#3a3024" stroke="#3a3024" stroke-width="2"/>
+<text x="390" y="387" fill="#ffd184" font-family="Arial, sans-serif" font-size="20" font-weight="700">PAUSED  •  No provider credential acquired</text>
+<text x="502" y="437" fill="#8cb8ff" font-family="Arial, sans-serif" font-size="18" font-weight="400">2  Signed request for review</text>
+<path d="M490 450 L795 450" stroke="#8cb8ff" stroke-width="2"/>
+<polygon points="795,450 785,445 785,455" fill="#8cb8ff"/>
+<text x="502" y="502" fill="#8cb8ff" font-family="Arial, sans-serif" font-size="18" font-weight="400">3  Signed, scoped decision</text>
+<path d="M795 515 L490 515" stroke="#8cb8ff" stroke-width="2"/>
+<polygon points="490,515 500,510 500,520" fill="#8cb8ff"/>
+<text x="197" y="567" fill="#8cb8ff" font-family="Arial, sans-serif" font-size="18" font-weight="400">4  Caller verifies signed callback</text>
+<path d="M490 580 L185 580" stroke="#8cb8ff" stroke-width="2"/>
+<polygon points="185,580 195,575 195,585" fill="#8cb8ff"/>
+<text x="197" y="632" fill="#8cb8ff" font-family="Arial, sans-serif" font-size="18" font-weight="400">5  Token exchange + client proof</text>
+<path d="M185 645 L490 645" stroke="#8cb8ff" stroke-width="2"/>
+<polygon points="490,645 480,640 480,650" fill="#8cb8ff"/>
+<text x="197" y="697" fill="#8cb8ff" font-family="Arial, sans-serif" font-size="18" font-weight="400">6  Key-bound operation grant</text>
+<path d="M490 710 L185 710" stroke="#8cb8ff" stroke-width="2"/>
+<polygon points="185,710 195,705 195,715" fill="#8cb8ff"/>
+<text x="197" y="762" fill="#8cb8ff" font-family="Arial, sans-serif" font-size="18" font-weight="400">7  Exact call + DPoP; Gate checks arguments</text>
+<path d="M185 775 L1100 775" stroke="#8cb8ff" stroke-width="2"/>
+<polygon points="1100,775 1090,770 1090,780" fill="#8cb8ff"/>
+<rect x="970" y="797" width="285" height="65" rx="12" fill="#153e38" stroke="#153e38" stroke-width="2"/>
+<text x="986" y="826" fill="#52dec2" font-family="Arial, sans-serif" font-size="18" font-weight="700">CONSUME ATOMICALLY</text>
+<text x="986" y="851" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="16" font-weight="400">Then acquire per-call credential</text>
+<text x="1112" y="892" fill="#52dec2" font-family="Arial, sans-serif" font-size="18" font-weight="400">8  OAuth API request</text>
+<path d="M1100 905 L1405 905" stroke="#52dec2" stroke-width="2"/>
+<polygon points="1405,905 1395,900 1395,910" fill="#52dec2"/>
+<text x="197" y="957" fill="#52dec2" font-family="Arial, sans-serif" font-size="18" font-weight="400">9  Signed result after dispatch; owned custody discarded</text>
+<path d="M1100 970 L185 970" stroke="#52dec2" stroke-width="2"/>
+<polygon points="185,970 195,965 195,975" fill="#52dec2"/>
+<text x="60" y="1037" fill="#ffd184" font-family="Arial, sans-serif" font-size="22" font-weight="400">Google enforces its OAuth grant. The broker enforces the exact delegated operation.</text>
+</svg>

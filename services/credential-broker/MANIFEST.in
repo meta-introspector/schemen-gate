@@ -10,3 +10,6 @@ include requirements-delegation.lock
 recursive-include proofs/oauth-delegation *.py *.toml *.lock README.md
 recursive-include tests *.py
 recursive-include scripts *.py
+include RESOURCE_OWNER_GUIDE.md
+include GOOGLE_CALENDAR_ACCEPTANCE.md
+recursive-include docs/display *.md *.svg *.png *.py

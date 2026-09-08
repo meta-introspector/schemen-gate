@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120"><rect width="1600" height="1120" fill="#0c1422"/>
+<text x="60" y="54" fill="#52dec2" font-family="Arial, sans-serif" font-size="19" font-weight="700">SCHEMEN GATE  /  DELEGATED AUTHORIZATION</text>
+<text x="60" y="123" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="43" font-weight="700">Enforce where the capability lives.</text>
+<text x="60" y="161" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="21" font-weight="400">Today: broker enforcement. Adoption proposal: native operation authorization at the resource API.</text>
+<text x="60" y="1086" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="16" font-weight="400">BROKER 0.3.0  •  IMPLEMENTATION + ADOPTION GUIDE  •  NO SUBSTRATE REQUIRED</text>
+<text x="1490" y="1090" fill="#52dec2" font-family="Arial, sans-serif" font-size="20" font-weight="700">03</text>
+<rect x="60" y="220" width="720" height="355" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<rect x="820" y="220" width="720" height="355" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="85" y="270" fill="#52dec2" font-family="Arial, sans-serif" font-size="24" font-weight="700">TODAY  /  IMPLEMENTED BROKER</text>
+<text x="845" y="270" fill="#8cb8ff" font-family="Arial, sans-serif" font-size="24" font-weight="700">PROPOSAL  /  RESOURCE-NATIVE</text>
+<text x="85" y="333" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="23" font-weight="400">Caller → signed approval flow</text>
+<text x="85" y="385" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="23" font-weight="400">Gate → exact operation check</text>
+<text x="85" y="437" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="23" font-weight="400">Consume → acquire credential → Google</text>
+<text x="85" y="489" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="23" font-weight="400">Google checks its ordinary OAuth token</text>
+<text x="845" y="333" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="23" font-weight="400">Caller → resource authorization endpoint</text>
+<text x="845" y="385" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="23" font-weight="400">Owner / delegate → signed decision</text>
+<text x="845" y="437" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="23" font-weight="400">Resource API → verify operation grant</text>
+<text x="845" y="489" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="23" font-weight="400">Consume → execute inside resource boundary</text>
+<text x="85" y="552" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="20" font-weight="400">Protects credentials held by this broker.</text>
+<text x="845" y="552" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="20" font-weight="400">No broad provider token sent to the caller.</text>
+<text x="60" y="648" fill="#ffd184" font-family="Arial, sans-serif" font-size="23" font-weight="700">ONE-USE LIFECYCLE</text>
+<rect x="60" y="680" width="260" height="65" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="82" y="723" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="24" font-weight="700">PENDING</text>
+<path d="M320 712 L357 712" stroke="#52dec2" stroke-width="2"/>
+<polygon points="357,712 347,707 347,717" fill="#52dec2"/>
+<rect x="365" y="680" width="260" height="65" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="387" y="723" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="24" font-weight="700">APPROVED</text>
+<path d="M625 712 L662 712" stroke="#52dec2" stroke-width="2"/>
+<polygon points="662,712 652,707 652,717" fill="#52dec2"/>
+<rect x="670" y="680" width="260" height="65" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="692" y="723" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="24" font-weight="700">ISSUED</text>
+<path d="M930 712 L967 712" stroke="#52dec2" stroke-width="2"/>
+<polygon points="967,712 957,707 957,717" fill="#52dec2"/>
+<rect x="975" y="680" width="260" height="65" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="997" y="723" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="24" font-weight="700">CONSUMED</text>
+<text x="1260" y="722" fill="#52dec2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Dispatch</text>
+<path d="M1235 712 L1252 712" stroke="#52dec2" stroke-width="2"/>
+<polygon points="1252,712 1242,707 1242,717" fill="#52dec2"/>
+<rect x="60" y="785" width="1480" height="140" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="85" y="829" fill="#52dec2" font-family="Arial, sans-serif" font-size="23" font-weight="700">CONSUMED IS TERMINAL FOR EXECUTION</text>
+<text x="85" y="873" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="23" font-weight="400">Confirmed or uncertain result → signed receipt. Restart or retry cannot reopen the grant.</text>
+<text x="85" y="906" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="21" font-weight="400">Owned per-call custody is discarded; this does not prove upstream token revocation.</text>
+<text x="60" y="986" fill="#ffd184" font-family="Arial, sans-serif" font-size="24" font-weight="400">Local protocol tests pass. Live Google access is pending account configuration.</text>
+<text x="60" y="1024" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="22" font-weight="400">The native resource integration above is a proposal, not a claim of Google support.</text>
+</svg>
