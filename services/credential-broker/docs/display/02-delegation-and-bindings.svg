@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120"><rect width="1600" height="1120" fill="#0c1422"/>
+<text x="60" y="54" fill="#52dec2" font-family="Arial, sans-serif" font-size="19" font-weight="700">SCHEMEN GATE  /  DELEGATED AUTHORIZATION</text>
+<text x="60" y="123" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="43" font-weight="700">Authority is explicit at every handoff.</text>
+<text x="60" y="161" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="21" font-weight="400">A key proves who signed. A validated delegation determines what that signer may approve.</text>
+<text x="60" y="1086" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="16" font-weight="400">BROKER 0.3.0  •  IMPLEMENTATION + ADOPTION GUIDE  •  NO SUBSTRATE REQUIRED</text>
+<text x="1490" y="1090" fill="#52dec2" font-family="Arial, sans-serif" font-size="20" font-weight="700">02</text>
+<rect x="60" y="235" width="460" height="170" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="85" y="285" fill="#52dec2" font-family="Arial, sans-serif" font-size="25" font-weight="700">RESOURCE OWNER</text>
+<text x="85" y="332" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Configured authority root</text>
+<text x="85" y="366" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Bound to account + resource</text>
+<rect x="570" y="235" width="460" height="170" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="595" y="285" fill="#52dec2" font-family="Arial, sans-serif" font-size="25" font-weight="700">DELEGATE</text>
+<text x="595" y="332" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Parent commitment + child key</text>
+<text x="595" y="366" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Same request; shorter lifetime</text>
+<rect x="1080" y="235" width="460" height="170" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="1105" y="285" fill="#52dec2" font-family="Arial, sans-serif" font-size="25" font-weight="700">FINAL APPROVER</text>
+<text x="1105" y="332" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Signs approve / deny</text>
+<text x="1105" y="366" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Human or software interface</text>
+<path d="M520 320 L565 320" stroke="#52dec2" stroke-width="2"/>
+<polygon points="565,320 555,315 555,325" fill="#52dec2"/>
+<path d="M1030 320 L1075 320" stroke="#52dec2" stroke-width="2"/>
+<polygon points="1075,320 1065,315 1065,325" fill="#52dec2"/>
+<rect x="60" y="455" width="1480" height="155" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="90" y="498" fill="#8cb8ff" font-family="Arial, sans-serif" font-size="21" font-weight="700">THE COMMITMENT TRAVELS WITH THE REQUEST</text>
+<text x="90" y="548" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="26" font-weight="400">Caller key  ·  Tenant + connection  ·  Resource  ·  Operation + arguments</text>
+<text x="90" y="587" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="26" font-weight="400">Return channel  ·  Nonce  ·  Expiry  ·  Parent chain  ·  One-use limit</text>
+<rect x="60" y="655" width="720" height="235" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="85" y="704" fill="#52dec2" font-family="Arial, sans-serif" font-size="24" font-weight="700">VALIDATE EACH LINK</text>
+<text x="85" y="752" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Trusted root and final signer</text>
+<text x="85" y="787" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Parent hash and permitted action</text>
+<text x="85" y="822" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">No scope or lifetime expansion</text>
+<text x="85" y="857" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Bounded depth; cycles rejected</text>
+<rect x="820" y="655" width="720" height="235" rx="12" fill="#152237" stroke="#152237" stroke-width="2"/>
+<text x="845" y="704" fill="#ff9b9b" font-family="Arial, sans-serif" font-size="24" font-weight="700">REJECT BEFORE DISPATCH</text>
+<text x="845" y="752" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Substituted caller or connection</text>
+<text x="845" y="787" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Changed callback or arguments</text>
+<text x="845" y="822" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Expired or replayed proof</text>
+<text x="845" y="857" fill="#f0f5ff" font-family="Arial, sans-serif" font-size="22" font-weight="400">Untrusted signer or broken parent</text>
+<text x="60" y="959" fill="#a9b9d0" font-family="Arial, sans-serif" font-size="23" font-weight="400">Implemented: a bounded linear approval chain. A human signing UI is an integration piece.</text>
+<text x="60" y="1002" fill="#ffd184" font-family="Arial, sans-serif" font-size="23" font-weight="400">TLS CA trust authenticates transport; resource authority needs its own scoped key binding.</text>
+</svg>

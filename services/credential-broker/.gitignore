@@ -9,3 +9,5 @@ local-data/
 
 .verify-venv/
 broker-tests.xml
+proofs/oauth-delegation/delegation-tests.xml
+proofs/oauth-delegation/evidence/

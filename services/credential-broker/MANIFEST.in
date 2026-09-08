@@ -5,5 +5,11 @@ include HARDENING.md
 include requirements.lock
 include requirements-gate.lock
 include CALENDAR_ONE_OFF.md
+include DELEGATED_AUTHORIZATION.md
+include requirements-delegation.lock
+recursive-include proofs/oauth-delegation *.py *.toml *.lock README.md
 recursive-include tests *.py
 recursive-include scripts *.py
+include RESOURCE_OWNER_GUIDE.md
+include GOOGLE_CALENDAR_ACCEPTANCE.md
+recursive-include docs/display *.md *.svg *.png *.py

@@ -16,6 +16,35 @@ A **Regime** is the execution scope resolved from verified authority. It can
 select a model capability, attachment, data partition, or declared activation
 support. A caller-supplied Regime number or mask does not authenticate itself.
 
+## One request. A verifiable pause. One authorized call.
+
+The optional credential broker carries authenticated bindings from an agent's
+exact proposal through owner or delegated approval, a signed callback, and
+one-use execution. The Gate checks the actual operation before the broker
+consumes the authorization and acquires a per-call credential.
+
+![Authenticated delegation swimlanes: proposal, approval pause, callback, Gate and Calendar execution](services/credential-broker/docs/display/01-authenticated-swimlanes.png)
+
+[View the display kit and editable diagrams](services/credential-broker/docs/display/README.md)
+· [Resource-owner adoption guide](services/credential-broker/RESOURCE_OWNER_GUIDE.md)
+· [Protocol and integration contract](services/credential-broker/DELEGATED_AUTHORIZATION.md)
+
+<details>
+<summary>Delegation bindings and the resource enforcement boundary</summary>
+
+![Explicit authority at each delegation handoff](services/credential-broker/docs/display/02-delegation-and-bindings.png)
+
+![Implemented broker boundary and proposed native resource enforcement](services/credential-broker/docs/display/03-resource-boundary.png)
+
+</details>
+
+The broker is separately installed; no Substrate is required. The signed flow
+and Calendar custody path are locally tested with simulated provider transport.
+[Live Google acceptance](services/credential-broker/GOOGLE_CALENDAR_ACCEPTANCE.md)
+awaits account configuration. Native resource-side enforcement is an adoption
+proposal, not a claim of current Google support. Destruction covers owned
+per-call custody, not upstream token revocation.
+
 ## Gate and Runtime
 
 **Gate is the open-source enforcement library. Schemen Runtime is a separate,
