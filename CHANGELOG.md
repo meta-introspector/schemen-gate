@@ -4,6 +4,11 @@ All notable changes to Schemen Gate are documented here.
 
 ## Unreleased
 
+- Add broker 0.3.0 opt-in delegated authorization with Ed25519 signatures at
+  every authority transition, signed approval callbacks, private-key client
+  authentication, DPoP token exchange, encrypted durable state and Calendar
+  custody integration. Include a runnable demo and adversarial binding tests.
+
 - Add broker 0.2.0 optional one-off Google Calendar calls with exact-operation
   Gate AAD, durable consumption, per-call key destruction, channel/instance
   binding, signed receipts, CLI workflow and adversarial fault tests.

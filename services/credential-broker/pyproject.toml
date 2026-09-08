@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "schemen-credential-broker"
-version = "0.2.0"
+version = "0.3.0"
 description = "Encrypted credential custody and a constrained HTTP broker"
 readme = "README.md"
 license = "Apache-2.0"
@@ -14,6 +14,7 @@ dependencies = ["cryptography>=50,<52", "httpx>=0.28,<0.29", "fastapi>=0.139,<1"
 
 [project.optional-dependencies]
 gate = ["schemen-gate[crypto]==1.0.2"]
+delegation = ["schemen-gate[crypto]==1.0.2", "joserfc>=1.7.5,<2"]
 test = ["pytest>=8,<10"]
 
 [project.scripts]

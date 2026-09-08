@@ -5,13 +5,20 @@ HTTP requests. Agents receive permission to use a connection; they cannot
 retrieve its credential or select another tenant through request fields.
 
 This directory is an independently installed Apache-2.0 package,
-`schemen-credential-broker`, version **0.2.0**, requiring Python **3.11+** on
+`schemen-credential-broker`, version **0.3.0**, requiring Python **3.11+** on
 POSIX systems. It is excluded from the `schemen-gate` wheel and source
 distribution. The base connection broker does not require Gate or a private
 service. The optional `gate` extra enables
 [one-off Google Calendar calls](CALENDAR_ONE_OFF.md): exact operation AAD,
 one-use authority, per-call encrypted custody, and signed destruction receipts.
 Reusable connections retain their tenant/subject/connection/route permission model.
+
+The optional `delegation` extra adds an explicit
+[signed approval and callback flow](DELEGATED_AUTHORIZATION.md): Ed25519 request,
+delegation, approval, callback, client authentication, DPoP redemption and result
+bindings; encrypted durable state; and a bridge to one-off Calendar custody.
+It is an opt-in application module with a runnable local demo, not enabled by
+the existing `serve` command.
 
 ## Install from this checkout
 
