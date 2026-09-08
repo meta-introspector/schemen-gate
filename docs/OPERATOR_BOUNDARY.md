@@ -56,7 +56,10 @@ The credential broker stores encrypted provider credentials and authenticates
 callers before selecting a tenant connection, checking its subject and route
 policy, and injecting the credential into a permitted HTTP request. It supplies
 its own bounded ingress, local audit, and key-rotation implementation. Its
-current authorization is connection/route-based; it neither evaluates an
-exact-operation Gate grant nor verifies the semantic effect of a provider call.
+reusable connection path remains route-based. Its optional one-off Calendar
+path evaluates exact-operation Gate AAD, consumes a durable grant before
+credential release, and destroys per-call custody. Neither path independently
+verifies the semantic effect of a provider call. Destruction evidence concerns
+owned key buffers and declared custody, not every host or provider memory copy.
 See its [security contract](../services/credential-broker/SECURITY.md) for the
 threat model, failure behavior, and deployment obligations.

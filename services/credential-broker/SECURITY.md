@@ -1,7 +1,9 @@
 # Credential broker security contract
 
 This contract applies to the separately installed `schemen-credential-broker`
-package, not to the core library's cryptographic or model-boundary claims.
+package. Its optional Calendar path composes core exact-operation Gate APIs;
+its secret-custody observations do not extend model-boundary or whole-host
+memory-erasure claims.
 Use the root [private reporting policy](../../SECURITY.md) for vulnerabilities;
 include the broker version and repository commit, never real credentials.
 
@@ -69,9 +71,13 @@ An absence of advisory matches is not a proof of absence of vulnerabilities.
 
 ## Boundaries that are not provided
 
-The permission model is connection/route access. It does not infer human intent,
-authenticate individual argument approval, evaluate an exact-operation Gate
-grant, or govern a multi-step operation. Allowed calls can be repeated.
+The reusable connection path grants connection/route access and allows repeated
+calls. The optional [Calendar one-off path](CALENDAR_ONE_OFF.md) instead binds
+exact approved arguments, authenticated channel, and per-call custody to Gate
+AAD and consumes its authority before dispatch. The issuer, not the model,
+approves that call. Neither path infers human intent or governs a multi-step
+operation. Signed receipts attest the broker's local disposition; they are not
+independent evidence of physical erasure from all memory or provider systems.
 
 Fixed origins and disabled redirects prevent caller-selected forwarding but
 are not DNS pinning or a network egress sandbox. Only configure routes whose

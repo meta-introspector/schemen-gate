@@ -38,6 +38,9 @@ def system(tmp_path, request):
         def do_GET(self):
             self.respond()
 
+        def do_POST(self):
+            self.respond()
+
         def do_PATCH(self):
             self.respond()
 
@@ -46,6 +49,7 @@ def system(tmp_path, request):
             body = self.rfile.read(n) if n else b""
             state["calls"].append(
                 {
+                    "method": self.command,
                     "path": self.path,
                     "auth": self.headers.get("Authorization"),
                     "key": self.headers.get("X-API-Key"),
@@ -74,6 +78,11 @@ def system(tmp_path, request):
                 payload = json.dumps({"written": json.loads(body)}).encode()
             if state.get("delay_headers"):
                 time.sleep(state["delay_headers"])
+            if self.command == "POST" and auth:
+                state["writes"] += 1
+                payload = json.dumps({"id": json.loads(body)["id"], "status": "confirmed"}).encode()
+                status = state.get("calendar_status", 200)
+                payload = state.get("calendar_response", payload)
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Set-Cookie", "secret=" + state["secret"])
@@ -147,11 +156,13 @@ def system(tmp_path, request):
         "apikey": ProviderPolicy(origin, routes, "X-API-Key", "", True),
     }
     tokens = {
-        name: secrets.token_urlsafe(32) for name in ("admin", "agent", "other", "bob", "bobadmin")
+        name: secrets.token_urlsafe(32)
+        for name in ("admin", "agent", "other", "bob", "bobadmin", "otherchannel")
     }
     principals = {
         "admin": Principal("alice", "admin", True),
         "agent": Principal("alice", "agent"),
+        "otherchannel": Principal("alice", "agent", channel="other"),
         "other": Principal("alice", "other"),
         "bob": Principal("bob", "agent"),
         "bobadmin": Principal("bob", "admin", True),

@@ -1,5 +1,10 @@
 # Broker 0.1.2 hardening review
 
+This historical review records the 0.1.2 pass. The 0.2.0
+[Calendar review and evidence](CALENDAR_ONE_OFF.md) covers the later exact-call
+and ephemeral-custody integration, including repeated cancellation and custody
+instance binding regressions.
+
 This review covers the optional credential broker's application boundary.
 It does not certify a deployment or extend connection/route permissions into
 exact-operation authorization. See [SECURITY.md](SECURITY.md) for the complete

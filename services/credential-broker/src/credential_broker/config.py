@@ -7,7 +7,7 @@ import re
 import stat
 from pathlib import Path
 
-from .api import strict_object
+from .json_codec import strict_object
 from .models import Principal, ProviderPolicy, Route, identifier
 
 

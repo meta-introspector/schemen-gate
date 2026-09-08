@@ -5,11 +5,13 @@ HTTP requests. Agents receive permission to use a connection; they cannot
 retrieve its credential or select another tenant through request fields.
 
 This directory is an independently installed Apache-2.0 package,
-`schemen-credential-broker`, version **0.1.2**, requiring Python **3.11+** on
+`schemen-credential-broker`, version **0.2.0**, requiring Python **3.11+** on
 POSIX systems. It is excluded from the `schemen-gate` wheel and source
-distribution. It does not import the Gate library or require a private service.
-The current permission model is tenant/subject/connection/route access;
-exact-operation Gate grants are not evaluated by this version.
+distribution. The base connection broker does not require Gate or a private
+service. The optional `gate` extra enables
+[one-off Google Calendar calls](CALENDAR_ONE_OFF.md): exact operation AAD,
+one-use authority, per-call encrypted custody, and signed destruction receipts.
+Reusable connections retain their tenant/subject/connection/route permission model.
 
 ## Install from this checkout
 
@@ -164,7 +166,8 @@ Losing the relevant master key makes the encrypted credentials unrecoverable.
 ## Development and verification
 
 ```sh
-python -m pip install -e ".[test]"
+python -m pip install -r requirements.lock -r requirements-gate.lock
+python -m pip install -e ".[test,gate]"
 python -m pytest -q
 python -m ruff check src tests scripts
 python -m ruff format --check src tests scripts

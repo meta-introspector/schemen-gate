@@ -40,10 +40,12 @@ class Principal:
     tenant: str
     subject: str
     admin: bool = False
+    channel: str = "default"
 
     def __post_init__(self) -> None:
         identifier(self.tenant)
         identifier(self.subject)
+        identifier(self.channel)
         if type(self.admin) is not bool:
             raise ValueError("admin must be boolean")
 

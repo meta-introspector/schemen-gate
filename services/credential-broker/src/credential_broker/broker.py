@@ -48,14 +48,26 @@ class Broker:
             raise BrokerError(409, "provider_policy_changed_reprovision_required")
         if policy is None or not any(route.allows(method, path) for route in policy.routes):
             raise BrokerError(403, "route_denied")
-        # No caller-supplied headers, host, URL, cookies, auth, proxies, or redirect policy.
-        headers = {
-            policy.auth_header: policy.auth_prefix + connection.secret,
-            "Accept-Encoding": "identity",
-        }
         await run_in_threadpool(
             self.vault.audit, principal.tenant, principal.subject, connection_id, "dispatch", 0
         )
+        return await self.exchange(policy, connection.secret, method, path, query, body)
+
+    async def exchange(
+        self,
+        policy: ProviderPolicy,
+        secret: str,
+        method: str,
+        path: str,
+        query: dict[str, str],
+        body: object | None,
+    ) -> BrokerResponse:
+        """Trusted dispatch boundary; HTTP handlers must authorize before entering."""
+        # No caller-supplied headers, host, URL, cookies, auth, proxies, or redirect policy.
+        headers = {
+            policy.auth_header: policy.auth_prefix + secret,
+            "Accept-Encoding": "identity",
+        }
         try:
             # A fresh client prevents cross-connection cookies or auth persistence.
             async with (
@@ -77,10 +89,10 @@ class Broker:
                     raw = bytes(chunks)
                     # Refuse echoed credentials instead of returning or partially redacting them.
                     encodings = {
-                        connection.secret.encode(),
-                        quote(connection.secret, safe="").encode(),
-                        base64.b64encode(connection.secret.encode()),
-                        json.dumps(connection.secret)[1:-1].encode(),
+                        secret.encode(),
+                        quote(secret, safe="").encode(),
+                        base64.b64encode(secret.encode()),
+                        json.dumps(secret)[1:-1].encode(),
                     }
                     if any(value in raw for value in encodings):
                         raise BrokerError(502, "provider_secret_echo_blocked")

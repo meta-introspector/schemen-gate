@@ -72,10 +72,17 @@ def run() -> None:
             command.add_argument("--method", required=True)
             command.add_argument("--path", required=True)
             command.add_argument("--json-file", type=Path)
+    from .calendar_cli import add_commands
+
+    add_commands(sub)
     args = parser.parse_args()
     os.umask(0o077)
     logging.getLogger("httpx").disabled = True
     logging.getLogger("httpcore").disabled = True
+    if args.command in {"calendar-approve", "calendar-execute"}:
+        from .calendar_cli import run as calendar_run
+
+        raise SystemExit(calendar_run(args))
     if args.command == "init":
         bootstrap(args.secrets_dir)
         return

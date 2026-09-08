@@ -1,42 +1,46 @@
 from __future__ import annotations
 
 import asyncio
-import json
-from typing import Any, NoReturn, cast
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
+from typing import Any, cast
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 from starlette.concurrency import run_in_threadpool
 
 from .broker import Broker
+from .calendar_api import register_calendar_routes
+from .calendar_calls import CalendarCallService
 from .guard import RequestGuard
+from .json_codec import strict_object
 from .limits import Limits
-from .models import BrokerError, Connection, Principal, canonical, identifier
+from .models import BrokerError, Connection, Principal, identifier
 
 MAX_REQUEST = 65_536
 
 
-def strict_object(raw: bytes) -> dict[str, Any]:
-    def unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-        result = {}
-        for key, value in pairs:
-            if key in result:
-                raise ValueError("duplicate JSON key")
-            result[key] = value
-        return result
-
-    def invalid_constant(value: str) -> NoReturn:
-        raise ValueError("nonfinite JSON")
-
-    data = json.loads(raw, object_pairs_hook=unique, parse_constant=invalid_constant)
-    if not isinstance(data, dict):
-        raise ValueError("object required")
-    canonical(data)  # Also reject numeric overflow to infinity (e.g. JSON 1e999).
-    return data
-
-
 def create_app(broker: Broker, identities: dict[str, Principal]) -> FastAPI:
-    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, redirect_slashes=False)
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        async def cleanup() -> None:
+            while True:
+                await asyncio.sleep(1)
+                app.state.calendar_calls.secrets.prune()
+
+        task = asyncio.create_task(cleanup())
+        try:
+            yield
+        finally:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+            app.state.calendar_calls.secrets.close()
+
+    app = FastAPI(
+        docs_url=None, redoc_url=None, openapi_url=None, redirect_slashes=False, lifespan=lifespan
+    )
+    app.state.calendar_calls = CalendarCallService(broker)
     identities = dict(identities)
     limits = Limits(list(identities.values()))
     app.state.limits = limits
@@ -62,6 +66,8 @@ def create_app(broker: Broker, identities: dict[str, Principal]) -> FastAPI:
             return strict_object(bytes(raw))
         except (ValueError, UnicodeError, RecursionError) as exc:
             raise BrokerError(400, "invalid_json") from exc
+
+    register_calendar_routes(app, payload, identities)
 
     @app.exception_handler(BrokerError)
     async def broker_error(request: Request, exc: BrokerError) -> JSONResponse:

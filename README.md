@@ -163,8 +163,10 @@ The optional [credential broker](services/credential-broker/README.md) is a
 separate Python 3.11+ package in this repository. It is excluded from the Gate
 wheel and source distribution, and adds no dependencies or server entry point
 to a core installation. It provides encrypted credential custody and
-connection/route authorization; it does not yet enforce exact-operation Gate
-grants. Install it explicitly from its directory when that service is needed.
+connection/route authorization, plus an optional
+[one-off Calendar path](services/credential-broker/CALENDAR_ONE_OFF.md) that
+binds exact-call Gate AAD, consumes authority once, and destroys per-call
+credential custody. Install the service and its Gate extra explicitly for that path.
 
 ## Training is a lifecycle choice
 

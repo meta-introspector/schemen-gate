@@ -3,5 +3,7 @@ include README.md
 include SECURITY.md
 include HARDENING.md
 include requirements.lock
+include requirements-gate.lock
+include CALENDAR_ONE_OFF.md
 recursive-include tests *.py
 recursive-include scripts *.py
