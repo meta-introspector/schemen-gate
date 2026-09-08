@@ -68,6 +68,7 @@ EXPECTED_TOP_LEVEL = {
     "requirements",
     "research",
     "scripts",
+    "services",
     "src",
     "tests",
 }
@@ -170,7 +171,8 @@ def test_release_docs_track_current_version_and_canonical_research() -> None:
     assert "## 1.0.2 - Production-ready release candidate" in changelog
     assert "## 1.0.1 - Historical retained release" in changelog
     assert "## 1.0.0 - Initial release line" in changelog
-    assert changelog.count("## ") == 3
+    assert "## Unreleased" in changelog
+    assert changelog.count("## ") == 4
     assert "research/cdp/proofs/" in claims
 
 

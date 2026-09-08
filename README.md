@@ -84,6 +84,7 @@ MNIST fixture, not evidence of complete model privacy.
 | Authorize an existing model or protected operation | Scoped capabilities and exact-operation gates | [API guide](docs/USAGE.md#other-primitives), [operator boundary](docs/OPERATOR_BOUNDARY.md) |
 | Release encrypted model shards | Signed lockboxes and recipient-specific grants | [Executable shard fixture](examples/cotrained_shard_lockbox/README.md) |
 | Release context or vectors | Cargo manifests, material-bound receipts, and gated retrieval | [Cargo contract](docs/CARGO_MODE.md), [API guide](docs/USAGE.md#other-primitives) |
+| Store a provider credential and broker permitted HTTP calls | Optional, separately installed credential broker | [Broker service](services/credential-broker/README.md) |
 | Gate a NumPy or PyTorch activation | Immutable `GateMask` | [First Gate](docs/USAGE.md#first-working-gate), [API reference](docs/USAGE.md#gatemask-reference) |
 | Train with declared private support | Gate placement, frozen shared state, and aligned updates | [Training and model boundaries](docs/TRAINING.md) |
 
@@ -108,6 +109,8 @@ Gates that verify the same bindings).
   issuer. The operator supplies approved root fingerprints; a credential or
   bundle cannot nominate its own root as trusted.
 - **The operator controls revocation egress.** Gate does not ship a network fetcher.
+  This describes the library's certificate-revocation path; the separately
+  installed credential broker has its own explicit HTTP-provider boundary.
   Production revocation checks require an operator-supplied fetcher that enforces
   DNS, redirect, TLS, timeout, and response-size policy; see the
   [identity guide](docs/USAGE.md#use-a-pkcs12-machine-identity).
@@ -155,6 +158,15 @@ The wheel contains the Gate library. The source distribution also includes
 operational documentation, examples, tests, and release tools. Papers, proofs,
 and research receipts remain in this Git repository at the corresponding
 revision. Historical receipts retain the versions under which they were made.
+
+The optional [credential broker](services/credential-broker/README.md) is a
+separate Python 3.11+ package in this repository. It is excluded from the Gate
+wheel and source distribution, and adds no dependencies or server entry point
+to a core installation. It provides encrypted credential custody and
+connection/route authorization, plus an optional
+[one-off Calendar path](services/credential-broker/CALENDAR_ONE_OFF.md) that
+binds exact-call Gate AAD, consumes authority once, and destroys per-call
+credential custody. Install the service and its Gate extra explicitly for that path.
 
 ## Training is a lifecycle choice
 

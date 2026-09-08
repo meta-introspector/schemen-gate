@@ -2,6 +2,22 @@
 
 All notable changes to Schemen Gate are documented here.
 
+## Unreleased
+
+- Add broker 0.2.0 optional one-off Google Calendar calls with exact-operation
+  Gate AAD, durable consumption, per-call key destruction, channel/instance
+  binding, signed receipts, CLI workflow and adversarial fault tests.
+
+- Add an optional, separately packaged credential broker under
+  `services/credential-broker/`, with encrypted credential storage, tenant and
+  subject access checks, constrained HTTP proxying, credential and master-key
+  rotation, and adversarial integration tests.
+- Harden broker 0.1.2 with absolute provider deadlines, admission through
+  response delivery, sanitized CLI failures, strict request framing, and
+  hash-locked application dependencies.
+- Keep the core package version, dependencies, entry points, and release
+  artifacts unchanged; broker installation and release are separate actions.
+
 ## 1.0.2 - Production-ready release candidate
 
 - Continue at the next unused semantic version without moving or reusing an

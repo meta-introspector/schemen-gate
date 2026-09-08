@@ -39,6 +39,14 @@ Security-sensitive changes must include adversarial rejection tests. Changes to
 authority, key derivation, canonicalization, signatures, replay handling, trust
 anchors, or runtime contracts must document the exact old and new boundary.
 
+Optional service development is documented under `services/`. Services have
+independent packages, Python requirements, and CI; installing the core does not
+install them. For the credential broker, run the commands in
+[`services/credential-broker/README.md`](services/credential-broker/README.md).
+Do not copy local environment files, credentials, review transcripts, or
+generated test receipts into a public service directory. The root Apache-2.0
+license applies to service source as well as library source.
+
 Keep pull requests narrow, explain the user-visible behavior, and add or update
 tests and documentation together. Contributions outside `research/cdp/` are
 provided under the root Apache-2.0 license as described in section 5 of that
