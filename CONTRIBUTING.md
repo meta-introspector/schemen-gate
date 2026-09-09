@@ -6,6 +6,28 @@ can be reviewed before implementation.
 
 ## Development
 
+Every tracked change, including documentation and research artifacts, must be
+included in `RELEASE_MANIFEST.sha256` in the same commit. After completing the
+edits, stage the intended additions and deletions using explicit paths, then run:
+
+```bash
+python scripts/release_manifest.py --write
+git add RELEASE_MANIFEST.sha256
+python scripts/release_manifest.py --verify
+git diff --cached --check
+```
+
+The manifest enumerates Git-index paths and hashes their working-tree bytes.
+New untracked files are excluded until staged. Stage the final versions of all
+intended changes before committing; rerun the commands after any further edit.
+Review the manifest diff along with the source diff. CI verifies the manifest;
+it never regenerates or silently accepts changed hashes.
+
+The `hygiene` CI job runs before the test, build, research, and release-contract
+jobs. Repository administrators must require passing CI checks on `main` and
+require pull requests so a failed push cannot become the public default branch.
+Workflow files alone do not enforce GitHub branch rules.
+
 ```bash
 python -m pip install -e ".[crypto,lockbox,onnx,rag,spiffe,torch,dev]"
 python -m pytest -q

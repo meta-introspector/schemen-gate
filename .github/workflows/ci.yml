@@ -14,7 +14,22 @@ env:
   SCHEMEN_GATE_SOURCE_REPOSITORY: https://github.com/sekosai/schemen-gate
 
 jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: python scripts/release_manifest.py --verify
+      - run: python -m pip install "pypdf>=6.0"
+      - run: python scripts/public_hygiene.py
+      - run: python scripts/check_docs.py
+      - run: python scripts/validate_release_contract.py
+      - run: python scripts/check_pypi_readme.py
+
   test:
+    needs: hygiene
     strategy:
       fail-fast: false
       matrix:
@@ -78,6 +93,7 @@ jobs:
         run: python -m mypy src/schemen_gate
 
   build:
+    needs: hygiene
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -103,6 +119,7 @@ jobs:
           if-no-files-found: error
 
   research:
+    needs: hygiene
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -116,6 +133,7 @@ jobs:
       - run: cd research/cdp && ./scripts/check_lean_claims.sh
 
   release-contract:
+    needs: hygiene
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
