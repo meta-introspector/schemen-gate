@@ -55,32 +55,18 @@ Three definitions only:
 - `PRFAdvantage` — typed structure for the PRF distinguishing advantage.
   Scaffolding for the same reduction.
 
-## The claim Schemen makes based on these types
+## Unproved research objective
 
-Schemen's public-facing cryptographic claim is:
+These types do not establish a recovery or indistinguishability reduction.
+A future result needs a probability model for key generation, training data,
+weight observations, and adversary success. PartitionOblivious remains a
+True-valued marker, so it cannot supply such a hypothesis today.
 
-  > "Under the PRF assumption and assuming the customer's training data is
-  > partition-oblivious, recovering the key from the observed model weights
-  > is as hard as distinguishing the underlying PRF (HMAC-SHA256) from a
-  > random function."
-
-This is the standard shape of a cryptographic reduction claim. It is **not**
-formally proven in Lean at this time. The V2 axiom
-`prf_brute_force_optimal` (in `ModelSecurityV2.lean`) is a related but
-distinct claim: it bounds the query budget of an adversary who successfully
-recovers the partition. The two together give a defensible informal
-cryptographic argument. The V5 work, when it happens, will formalize the
-distinguishing-advantage reduction against Mathlib probability theory.
-
-## Relationship to V3's `zero_key_information`
-
-V3's `zero_key_information` theorem remains in `ModelSecurityV3.lean` with
-an explicit scope note that its `IsSurjective T` hypothesis is false for
-realistic SGD. It is retained for historical completeness and as an API
-peg for downstream code that references it. **Do not cite
-`zero_key_information` in marketing, compliance submissions, or patent
-specifications.** Cite the informal cryptographic reduction described in
-this file's doc comment instead.
+V2's former global recovery axiom has been removed. Historical wrappers now
+require FullEnumerationAssumption explicitly. Neither that unvalidated premise
+nor the scaffolding here is a supported cryptographic security guarantee.
+V3's surjectivity result is retained for historical inspection and must not be
+promoted to a claim of posterior equality or distributed-model secrecy.
 -/
 
 set_option autoImplicit false

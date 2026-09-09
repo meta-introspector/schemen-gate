@@ -1,5 +1,6 @@
 import GatePlacement
 import CompressionSecurity
+import GenerationIsolation
 
 /-!
 This file is an executable audit receipt, not an additional proof module.
@@ -17,3 +18,7 @@ project-specific axiom name in this output.
 #print axioms Schemen.SecurityV3.residual_block_full_confinement
 #print axioms Schemen.SecurityV3.non_preserving_breaks_w1_confinement
 #print axioms Schemen.CompressionSecurity.injection_confined_vec
+#print axioms Schemen.Security.standard_support_count_ge_two_pow_256
+#print axioms Schemen.SecurityV2.gated_output_valid_distribution
+#print axioms Schemen.SecurityV3.regime_output_independent_of_others
+#print axioms Schemen.Generation.autoregressive_independent_of_inactive

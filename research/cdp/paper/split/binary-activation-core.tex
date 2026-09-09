@@ -336,13 +336,20 @@ supports; coordinates outside the union remain excluded.
 
 \section{Formal Verification}
 
-The accompanying pinned Lean 4 project builds 21 modules and 312 active theorem or
+The accompanying pinned Lean 4 project builds 21 modules and 317 active theorem or
 lemma declarations, with no active \texttt{sorry} or \texttt{admit}
-declarations. A checked-in \texttt{\#print axioms} audit shows that the nine
-headline gate and placement statements use only Lean/Mathlib's standard
-logical axioms. Five project-specific \texttt{axiom} declarations are present
+declarations. A checked-in \texttt{\#print axioms} audit shows that thirteen
+selected gate, placement, cardinality, and output statements use only
+Lean/Mathlib's standard logical axioms. Four project-specific \texttt{axiom}
+declarations are present
 in separate conditional or historical theorem chains; none reaches the
 headline statements used here.
+
+The historical recovery-cost chain now takes an explicit, unvalidated
+\texttt{FullEnumerationAssumption} as a caller premise. The size of a support
+space does not establish attack cost or a pseudorandom-function reduction.
+Likewise, softmax normalization establishes a valid probability distribution,
+not answer correctness, confidence, or concealment of an incorrect regime.
 
 The selected results are:
 \begin{itemize}

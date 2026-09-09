@@ -106,14 +106,13 @@ isolation.
   separate-minus-gated gaps are 0.14–0.38 percentage points across
   R=8–128 at a post-encoder CLS gate; none of seven paired tests
   survives Bonferroni correction
-- **Formal verification**: 21 Lean 4 modules and 312 theorem/lemma
-  declarations, with no `sorry`; three explicit custom axioms (plus two
-  opaque predicates) are confined to conditional
-  cryptographic/adversarial chains; two earlier statistical axioms
-  (`camouflage_indistinguishable`, `gradient_probing_hard`) are retired
-  as not provable white-box — the deployments they served are secured by
-  an unbundled historical custody design; it is not part of this release's
-  proof claim
+- **Formal verification**: 21 Lean 4 modules and 317 theorem/lemma
+  declarations, with no `sorry`; four custom axioms (two opaque predicates
+  and two historical statistical assumptions) remain outside the thirteen
+  audited supported results. The former global recovery bound is now an
+  explicit, unvalidated `FullEnumerationAssumption`. Cardinality bounds do
+  not establish recovery cost, and valid softmax does not establish confident
+  wrongness. See the [claim boundaries](../../docs/FORMAL_CLAIM_BOUNDARIES.md).
 - **Strict intermediate-FFN cotenancy**: Across R=1–16, frozen shared,
   off-partition parameter, inactive optimizer-moment, and inactive
   classifier deltas are exactly zero; accuracy declines from 91.28%

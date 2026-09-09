@@ -17,7 +17,7 @@ its wording everywhere.
 | Tier | Meaning | Examples |
 |---|---|---|
 | **Proven** | Bundled Lean theorem, kernel-checked, `sorry`-free | mask isolation, aligned update confinement |
-| **Standard assumption** | Cited cryptographic assumption (PRF, EUF-CMA) | HMAC-SHA256 as PRF (represented by a bundled V2 axiom); Ed25519 EUF-CMA as an external assumption, not a bundled Lean axiom |
+| **Standard assumption** | Cited cryptographic assumption (PRF, EUF-CMA) | HMAC-SHA256 as PRF (external assumption; no bundled recovery reduction); Ed25519 EUF-CMA as an external assumption, not a bundled Lean axiom |
 | **Observed** | Empirical hardening; measured, not proved | partition opacity of cotrained weights, superposition under capacity |
 
 ## Code ↔ theorem map
@@ -33,18 +33,37 @@ or whole-model theorem.
 
 | Code path | Lean theorem(s) | Tier |
 |---|---|---|
-| `_crypto._csprng_permutation` (Fisher–Yates, HMAC-SHA256 counter mode, **rejection sampling**) | `rejection_sampling_count`, `rejection_unbiased` (GateSecurity §10) | Proven (uniformity); PRF assumption for indistinguishability |
-| `_crypto.derive_partition` (equal slices, disjoint, exhaustive) | `ValidPartition` structure: `equal_size`, `disjoint`, `exhaustive`; `unique_membership` (GateSecurity §6) | Proven |
+| `_crypto._csprng_permutation` (Fisher–Yates, HMAC-SHA256 counter mode, **rejection sampling**) | `rejection_sampling_count`, `rejection_unbiased` (GateSecurity §10) | Proven counting for ideal rejection sampling; implementation tested separately; external PRF assumption for pseudorandomness |
+| `_crypto.derive_partition` (equal slices, disjoint, exhaustive) | `ValidPartition` structure: `equal_size`, `disjoint`, `exhaustive`; `unique_membership` (GateSecurity §6) | Proven under valid-partition hypotheses; implementation construction tested separately |
 | `GateMask.apply` / `_mask.py` forward gating | `forward_isolation`, `gradient_isolation`, `gradient_confinement` (GateSecurity §1) | Proven in the mathematical model; implementation correspondence is tested, not formally proved |
 | Gate-aware training with a conforming aligned update (including optimizer moments and weight decay) | `weight_update_confined`, `w2_update_confined`, `step_confined`, `end_to_end_isolation` (GateSecurity §2, §12, §13) | Proven for the modeled update contract |
-| Wrong-mask inference behavior | `wrong_mask_reads_wrong_dims`, `wrong_key_valid_distribution` (GateSecurity §7, ModelSecurityV2 §4) | Proven |
-| Exact combinatorial floor on partition recovery | `central_binom_lower`, `general_exponential_search`, `exceeds_aes256_security` (ModelSecurity §B–§E) | Proven |
-| "Enumeration is optimal" (adversary must search) | `prf_brute_force_optimal` (ModelSecurityV2) — **axiom**, conditioned on opaque `Recovers` | Standard assumption |
+| Distinct regimes of one valid partition have disjoint support | `wrong_mask_reads_wrong_dims` (GateSecurity §7); different-key masks are not assumed disjoint | Proven in the mathematical model |
+| Any real-valued masked logits have valid softmax probabilities for nonempty output | `gated_output_valid_distribution` (ModelSecurityV2 §3); no correctness, confidence, calibration, or concealment conclusion | Proven in the mathematical model |
+| Selected logits are invariant to inactive hidden-coordinate changes with active values, projection, and bias fixed | `regime_output_independent_of_others` (ModelSecurityV3 §2) | Proven in the mathematical model |
+| Modeled generation is invariant to inactive adapter changes with active adapters, frozen functions, prompt, and deterministic sampler fixed | `autoregressive_independent_of_inactive` (GenerationIsolation) | Proven in the mathematical model; not serving/GPU refinement |
+| Nominal support-space cardinality bounds | `central_binom_lower`, `general_exponential_search`, `standard_support_count_ge_two_pow_256` (ModelSecurity §B–§E); no attack-work or entropy bound | Proven arithmetic |
 | `_lockbox.py` grant signing, provenance, and verification | No bundled implementation-refinement theorem; negative tests cover trust roots, signatures, exact signed membership, expiry, revocation, key binding, and tamper | Observed implementation behavior under the selected EdDSA, ECDSA, or RSA signature assumption |
 | `_pkcs12.Pkcs12KeyProvider` credential loading and signing | No bundled theorem; tests cover Ed25519, Ed448, ECDSA, RSA, key/certificate match, chain packaging, pinned trust anchors, certificate metadata, wrong-password refusal, signature verification, and wrong-root rejection | Observed implementation behavior under the selected signature assumption |
 | `_tokens.py` AAD-bound token contracts | No bundled implementation-refinement theorem; canonical scope, release identity, expiry, tamper, and wrong-key tests | Observed implementation behavior under the AEAD/HMAC assumptions |
 | `_cargo.py`, `_cargo_impl.py`, and `_rag.py` | No bundled theorem; adversarial tests cover exact manifest scope, finite operations, partition binding, immutable snapshots, material hashes, completion obligations, replay, and cross-partition denial | Observed implementation behavior under HMAC-SHA256 PRF/unforgeability assumptions |
 | Cotraining opacity ("shared coplanes", inspection resistance) | No bundled confidentiality proof. Bounded historical observations are cataloged in `research/cdp/docs/experiment-data-inventory.md`; they are not promoted to a cryptographic claim. | Observed |
+
+## Recovery and output claim boundaries
+
+The former global `prf_brute_force_optimal` axiom has been removed. Its
+historical name now forwards an explicitly supplied `FullEnumerationAssumption`.
+No instance is established here. Neither this premise nor the historical
+`DistributableSafety` wrappers is a supported recovery or confidentiality claim.
+An opaque `Recovers` predicate is not a computational security game.
+
+Counting candidate supports does not prove an attack must enumerate them.
+A fixed guess can succeed with nonzero probability, and deterministic derivation
+from a 32-byte key cannot add secret entropy beyond the key. No AES-comparable
+recovery strength follows from the binomial inequalities. Valid softmax likewise
+does not imply confident wrong answers or indistinguishability. See
+[formal claim boundaries](FORMAL_CLAIM_BOUNDARIES.md) for the finite controls and
+compatibility changes. Invalid authority still fails before protected access;
+none of these mathematical lemmas supplies an authorization decision.
 
 ## Terminology note
 

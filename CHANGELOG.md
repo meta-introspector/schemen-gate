@@ -4,6 +4,13 @@ All notable changes to Schemen Gate are documented here.
 
 ## Unreleased
 
+- Remove the global partition-recovery axiom. Historical Lean wrappers now
+  require an explicit, unvalidated full-enumeration premise. Describe binomial
+  results as support counts and softmax as output validity, with compatibility
+  names for narrower mathematical statements. Add selected-output and modeled
+  generation independence to the claim map and transitive axiom audit. The runtime
+  authorization, key derivation, and Gate execution are unchanged.
+
 - Supervise native/release acceptance through actual process exit. Require an
   isolated Python environment, reject invalid timeouts, stop owned POSIX
   process groups, and retain private failure receipts. Never infer acceptance

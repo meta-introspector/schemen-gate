@@ -6,96 +6,22 @@ Authors: Ryan R
 import ModelSecurityV3
 
 /-!
-# V4 — Distributed Model Security (Weight Camouflage)
+# Historical Camouflage and Conditional Wrapper Models
 
-Addresses the critical gap identified in V1–V3: the proofs modeled
-only partition enumeration as the adversary's attack. They did not
-model weight inspection (B1-1), cross-weight correlation (B1-3),
-or arbitrary mask construction (B1-5). This file closes those gaps
-by formalizing Weight Camouflage as a post-training transformation
-and proving its security properties.
+The algebraic results about masked output preservation, permutations, and
+patching retain their stated hypotheses. Statistical camouflage declarations
+remain historical assumptions and are excluded from supported claims.
 
-## What V1–V3 Get Wrong
+The former V2 global recovery axiom has been removed. The wrapper constructors
+in this file now require FullEnumerationAssumption explicitly; it has no
+established instance and is not a standard PRF assumption. A candidate-space
+count does not bound attack cost, and a successful guess need not exhaust it.
 
-### The PRF Axiom Gap
-
-`prf_brute_force_optimal` (V2) says: IF recovery succeeds, THEN
-queries ≥ C(n,n/R). This models the adversary as ENUMERATING
-partitions. But a real adversary can INSPECT trained weights:
-
-- W2 row inspection: O(n) to identify regime-specific output patterns
-- W1 column inspection: O(n) to identify regime-specific input patterns
-- Cross-weight correlation: co-trained W1/W2 pairs are correlated
-
-These are polynomial-time attacks that bypass the combinatorial
-bound entirely. The PRF axiom remains correct for what it claims
-(enumeration hardness), but it is INSUFFICIENT for distributed
-model security.
-
-### The IsSurjective Gap
-
-V3's `zero_key_information` proves that weights carry zero BITS
-about the key (information-theoretic). But this is about the KEY,
-not the PARTITION. The trained weights carry many bits about the
-partition through regime-specific structural patterns, even though
-they carry zero bits about which specific key produced that partition.
-
-### What This File Proves
-
-1. **Camouflage Preserves Correct Output** (algebraic, fully proven):
-   applying the correct mask to a camouflaged model zeroes out
-   all noise dimensions, producing identical output to the original.
-
-2. **All-1s on Camouflaged Model Diverges** (algebraic, fully proven):
-   the noise dimensions add non-zero terms to every logit, causing
-   the output to diverge from both the clean model's output and
-   any individual regime's clean output.
-
-3. **Permutation Is a Forward-Pass Isomorphism** (algebraic):
-   permuting dimensions and mask together preserves the computation.
-
-4. **Grant Patching Correctness** (algebraic):
-   patching a fully camouflaged model with granted weights produces
-   identical output to the original model with that regime's mask.
-
-5. **Weight Statistical Indistinguishability** (AXIOM):
-   noise weights sampled from the empirical distribution of real
-   weights with preserved correlation structure are computationally
-   indistinguishable from real weights. This is the load-bearing
-   assumption for distributed model security. See justification below.
-
-6. **Collusion Resistance** (algebraic):
-   models with different permutations cannot be aligned without
-   recovering both permutations, which is a factorial-sized search.
-
-## Axiom Inventory (after V4.2 — post adversarial-fit review)
-
-| Axiom / Hypothesis | Source | Type | Conclusion |
-|---|---|---|---|
-| `prf_brute_force_optimal` | V2 | Standard crypto (PRF) | `Recovers A S → C(n,n/R) ≤ A.queries` |
-| `IsSurjective T` | V3 | Per-process hypothesis | (parametric) |
-| `Recovers` | V2 | Opaque predicate | (opaque) |
-| `IsDistributionMatched` | V4.2 | Opaque predicate | (opaque) |
-| `camouflage_indistinguishable` | V4.2 | Statistical (noise) | `IsDistributionMatched N → ¬ DistinguisherSucceeds N D` |
-| `gradient_probing_hard` | V4.2 | Gradient analysis | `IsDistributionMatched N → ¬ (classify = real_dims)` |
-| `prf_implies_no_shortcut` | V1 | **REMOVED** (April 2026) | was `x ≤ x` |
-| `training_data_private` | V1 | **REMOVED** (April 2026) | was `True` |
-
-Key changes:
-
-V4.1 → V4.2: Both V4 axioms are now CONDITIONAL on `IsDistributionMatched N`,
-an opaque predicate following V2's `Recovers` pattern. This prevents deriving
-`False` from degenerate NoiseSchemes (e.g., noise_source = 0). A degenerate
-scheme exists but cannot be proven distribution-matched, maintaining consistency.
-
-V4.0 → V4.1: Axioms have type `¬ P`, not `True`.
-
-Five project-specific `axiom` declarations are present in the full graph: the
-PRF enumeration assumption; two opaque predicates (`Recovers` and
-`IsDistributionMatched`); and two historical statistical consequences
-conditioned on `IsDistributionMatched`. The two statistical consequences are
-retained for source audit but are excluded from the paper's claim set. The
-surjectivity premise is a per-process hypothesis, not a global axiom.
+The four remaining project-specific axioms in the imported graph are two
+opaque predicates (Recovers and IsDistributionMatched) and two historical
+statistical consequences (camouflage_indistinguishable and
+gradient_probing_hard). None is permitted in the audited supported theorems.
+Output validity proves neither confidence nor wrongness nor concealment.
 -/
 
 set_option autoImplicit false
@@ -116,8 +42,8 @@ open Schemen Schemen.Security Schemen.SecurityV2 Schemen.SecurityV3
 
     `real_dims` is the set of dimensions belonging to the
     authorized regime. `noise_dims` is the complement.
-    The key property: `camouflaged` agrees with `original`
-    on `real_dims` and differs on `noise_dims`. -/
+    `camouflaged` agrees with `original` on `real_dims`. The noise field
+    requires one nonzero inactive value, not a difference from `original`. -/
 structure CamouflagedWeights (n : ℕ) where
   /-- The authorized regime's dimension set -/
   real_dims : Finset (Fin n)
@@ -150,8 +76,8 @@ structure CamouflagedWeights (n : ℕ) where
     At noise dimensions: mask = 0, so both are zeroed regardless
     of the weight values.
 
-    This is the foundational correctness property: the authorized
-    user's experience is unchanged by camouflage. -/
+    This is equality of selected real coordinates, not an end-to-end
+    user-experience or serving guarantee. -/
 theorem camouflage_preserves_gated {n : ℕ}
     (C : CamouflagedWeights n) (j : Fin n) :
     C.camouflaged j * indicator C.real_dims j =
@@ -221,11 +147,9 @@ theorem all_ones_hadamard {n : ℕ} (v : Vec n) (j : Fin n) :
     - The sum over REAL dimensions (same as correct-mask output)
     - PLUS the sum over NOISE dimensions (the corruption term)
 
-    This is pure algebra — it holds for any partition of the
-    sum into two disjoint sets. The security content comes from
-    combining this with `noise_corrupts_logits` below, which
-    uses `noise_nontrivial` to show the corruption term can
-    be nonzero. -/
+    This is algebra for a sum split into two disjoint sets. The next
+    theorem separately requires that the complete inactive contribution
+    be nonzero; nonzero individual terms may cancel. -/
 theorem all_ones_logit_decomposition {n o : ℕ}
     (h_act : Vec n) (real_dims : Finset (Fin n))
     (W2 : Fin n → Fin o → ℝ) (b2 : Fin o → ℝ) (k : Fin o) :
@@ -251,15 +175,9 @@ theorem all_ones_logit_decomposition {n o : ℕ}
       apply Finset.sum_congr rfl
       intro j _; ring
 
-/-- **Theorem (Noise Corrupts All-1s Logits).**
-    If the camouflaged model has nontrivial noise (some noise
-    dimension j has nonzero activation h_act[j] and the W2 row
-    at j contributes nonzero signal at some output k), then the
-    all-1s logits DIFFER from the correct-mask logits.
-
-    This uses the decomposition above: if the corruption term
-    (sum over noise dims) is nonzero at any output k, then
-    all_ones_logit ≠ correct_logit at that k. -/
+/-- If the complete sum over inactive dimensions is nonzero at output k,
+    the all-ones and selected logits differ at k. An individual nonzero
+    inactive term does not suffice, because other terms may cancel. -/
 theorem noise_corrupts_logits {n o : ℕ}
     (h_act : Vec n) (real_dims : Finset (Fin n))
     (W2 : Fin n → Fin o → ℝ) (b2 : Fin o → ℝ)
@@ -452,54 +370,16 @@ def DistinguisherSucceeds {n : ℕ}
     (N : NoiseScheme n) (D : WeightDistinguisher n) : Prop :=
   D.classify N.weights = N.real_dims
 
-/-- OPAQUE PREDICATE (Distribution Matching Quality).
-
-    A NoiseScheme has distribution-matched noise if the noise_source
-    values are drawn from a process that preserves the marginal
-    distribution and cross-weight correlation of real_source.
-
-    This follows the V2 `Recovers` pattern: it is opaque, so you
-    cannot construct a proof of `IsDistributionMatched N` for a
-    degenerate scheme (e.g., noise_source = 0). This prevents the
-    axiom below from being used to derive `False` via trivial
-    schemes.
-
-    The implementation (`poc/distribution.py`) satisfies this by:
-    • Bootstrap resampling from the empirical distribution
-    • Perturbation with moment matching
-    • Cross-weight correlation preservation
-
-    Establishing `IsDistributionMatched` for a concrete scheme
-    requires external statistical validation (test suite), not
-    a formal proof. -/
+/-- Historical opaque predicate with no statistical model or supplied instance.
+    Empirical moment matching does not establish this Lean proposition or
+    the universal distinguisher exclusions below. It is outside supported
+    claims and is retained only to keep the historical chain inspectable. -/
 axiom IsDistributionMatched {n : ℕ} : NoiseScheme n → Prop
 
-/-- AXIOM (Weight Statistical Indistinguishability).
-
-    For a noise scheme with DISTRIBUTION-MATCHED noise generation,
-    no distinguisher can correctly identify the real dimensions
-    from the camouflaged weight vector.
-
-    This axiom is now CONDITIONAL on `IsDistributionMatched` —
-    it does NOT apply to degenerate schemes where noise is trivially
-    detectable (constant, all-zero, wrong magnitude, etc.).
-
-    Why this is consistent:
-    • You CAN construct a NoiseScheme with noise_source = 0
-    • But you CANNOT prove `IsDistributionMatched` for it (opaque)
-    • So you cannot invoke this axiom for degenerate schemes
-    • No inconsistency: bad schemes exist, they just can't be
-      proven distribution-matched
-
-    This mirrors V2's design:
-    • V2: `Recovers A S → C(n,n/R) ≤ A.queries`
-    • V4: `IsDistributionMatched N → ¬ DistinguisherSucceeds N D`
-
-    Justification (for well-matched schemes):
-    • Noise drawn from the empirical distribution of real weights
-      is indistinguishable from real weights by definition.
-    • Cross-weight correlations are preserved by joint resampling.
-    • Moment matching ensures higher-order statistics match. -/
+/-- Historical, unvalidated universal distinguisher exclusion conditioned on
+    the opaque IsDistributionMatched predicate. This is not a standard
+    cryptographic assumption or an empirical distribution-matching result.
+    It has no supported security interpretation. -/
 axiom camouflage_indistinguishable {n : ℕ}
     (N : NoiseScheme n) (D : WeightDistinguisher n)
     (hN : IsDistributionMatched N) :
@@ -516,25 +396,10 @@ axiom camouflage_indistinguishable {n : ℕ}
 structure GradientDistinguisher (n : ℕ) where
   classify : (Fin n → ℝ) → Finset (Fin n)
 
-/-- AXIOM (Gradient Probing Hardness).
-
-    For a distribution-matched noise scheme, gradient-based probing
-    cannot identify the real dimensions.
-
-    Conditional on BOTH `IsDistributionMatched` (noise is
-    statistically correct) and the adversary lacking training data
-    (cannot construct a verification oracle).
-
-    If the adversary has partial knowledge of the regime's
-    input-output mapping, they can construct a partial verification
-    oracle — this axiom does not apply in that case.
-
-    Justification:
-    • Both real and noise dimensions produce valid gradient signals.
-    • Without knowing which outputs SHOULD result from which inputs,
-      the adversary cannot evaluate whether a gradient pattern is
-      "correct" for the target regime.
-    • This is the gradient-space extension of steganographic failure. -/
+/-- Historical, unvalidated exclusion conditioned only on the opaque
+    IsDistributionMatched predicate. There is no training-data restriction,
+    observation model, or probabilistic success bound in this statement.
+    It is excluded from supported security claims. -/
 axiom gradient_probing_hard {n : ℕ}
     (N : NoiseScheme n) (G : GradientDistinguisher n)
     (hN : IsDistributionMatched N) :
@@ -545,30 +410,14 @@ axiom gradient_probing_hard {n : ℕ}
 -- §9. DISTRIBUTED SAFETY V4 — COMPREHENSIVE MAIN THEOREM
 -- ════════════════════════════════════════════════════════════════
 
-/-- Distributed safety with Weight Camouflage.
-
-    This is the definitive formal statement backing the patent's
-    claim of distributable safety for camouflaged models.
-
-    V1-V3 contributions (carried forward):
-    • combinatorial_hardness: C(768,384) ≥ 2^256
-    • steganographic_mask: wrong mask reads wrong dimensions
-    • steganographic_output: wrong mask → valid softmax
-    • weight_indistinguishable: weights carry zero key information
-    • regime_locality: wrong key = different sub-model
-
-    V4 contributions (NEW):
-    • camouflage_preserves: correct mask on camouflaged = original
-    • all_ones_diverges: noise dims corrupt all-1s output
-    • weight_camouflage_indistinguishable: noise ≈ real weights
-    • permutation_isomorphism: permuted model + permuted mask = same output
-    • grant_patching: patched camouflaged model = original for authorized regime -/
+/-- Historical package of arithmetic, local algebra, and unvalidated
+    premises. The field names do not establish distributable artifact safety. -/
 structure DistributableSafetyV4 (n R : ℕ) where
-  /-- V1: Search space exceeds AES-256 -/
+  /-- Nominal support-count inequality, not a security level. -/
   combinatorial_hardness :
     2 ^ 256 ≤ Nat.choose n (n / R)
 
-  /-- V2: Brute force is optimal for partition enumeration -/
+  /-- No standard cryptographic assumption establishes this field. -/
   no_shortcut :
     ∀ (S : CryptoScheme n R) (A : RecoveryAttempt n R)
       (_T : ThreatModel n R),
@@ -580,8 +429,7 @@ structure DistributableSafetyV4 (n R : ℕ) where
       r ≠ s → ∀ j : Fin n, j ∈ P.groups r →
       indicator (P.groups s) j = 0
 
-  /-- V2: Wrong mask produces valid probability distribution
-      (carried forward — V4 must not be weaker than V2) -/
+  /-- Validity of real softmax for any mask; no behavioral conclusion. -/
   steganographic_output :
     ∀ (o : ℕ) (_ho : 0 < o)
       (h_act : Vec n) (W2 : Fin n → Fin o → ℝ) (b2 : Fin o → ℝ)
@@ -611,27 +459,13 @@ structure DistributableSafetyV4 (n R : ℕ) where
       IsDistributionMatched N →
       ¬ DistinguisherSucceeds N D
 
-/-- **MAIN THEOREM V4 (Distributable Artifact Safety with Camouflage).**
-
-    For the standard deployment (N=768, R=2):
-
-    1. combinatorial_hardness: C(768,384) ≥ 2^256              ✓ PROVEN (V1)
-    2. no_shortcut: recovery requires ≥ C(768,384) queries      ✓ FROM AXIOM (PRF)
-    3. steganographic_mask: wrong mask reads wrong dims          ✓ PROVEN (V1)
-    4. steganographic_output: wrong mask → valid softmax         ✓ PROVEN (V2)
-    5. camouflage_preserves: correct mask preserves output       ✓ PROVEN (V4, new)
-    6. grant_patching: patched model = original for auth regime  ✓ PROVEN (V4, new)
-    7. camouflage_indist: no distinguisher succeeds (if matched) ✓ AXIOM (V4.2, conditioned)
-
-    ALSO PROVEN but not carried in this structure:
-    8. noise_corrupts_logits: all-1s ≠ correct output            ✓ PROVEN (V4, new)
-    9. permutation_preserves_logits: permuted model is isomorphic ✓ PROVEN (V4)
-    10. gradient_probing_hard: no gradient oracle (if matched)    ✓ AXIOM (V4.2, conditioned) -/
-theorem standard_is_distributable_safe_v4 :
+/-- Historical conditional wrapper. Requires a caller-supplied recovery
+    premise and retains the excluded statistical camouflage assumption. -/
+theorem standard_is_distributable_safe_v4
+    (h_enumeration : FullEnumerationAssumption 768 2) :
     DistributableSafetyV4 768 2 where
-  combinatorial_hardness := exceeds_aes256_security
-  no_shortcut := fun S A T h_rec =>
-    prf_brute_force_optimal S A T (by omega) (by omega) ⟨384, by omega⟩ h_rec
+  combinatorial_hardness := standard_support_count_ge_two_pow_256
+  no_shortcut := h_enumeration
   steganographic_mask := fun P r s hrs j hj =>
     wrong_mask_reads_wrong_dims P r s hrs j hj
   steganographic_output := fun o ho h_act W2 b2 mask =>
@@ -648,49 +482,12 @@ theorem standard_is_distributable_safe_v4 :
 -- §10. END-TO-END SECURITY CHAIN V4
 -- ════════════════════════════════════════════════════════════════
 
-/-- **Theorem (End-to-End Security Chain V4).**
-
-    Complete proven chain with all four proof families:
-
-    LINK 1  — Key → Partition                       [AXIOM: PRF]
-    LINK 2  — Partition → Binary Mask               [PROVEN: GateSecurity §3]
-    LINK 3  — Mask → Gradient Isolation             [PROVEN: GateSecurity §1]
-    LINK 4  — Gradient → Weight Confinement         [PROVEN: GateSecurity §2]
-    LINK 5  — Confinement → Knowledge Isolation     [PROVEN: GateSecurity §13]
-    LINK 6  — Isolation → Steganographic Mask       [PROVEN: GateSecurity §7]
-    LINK 7  — Mask → Steganographic Output          [PROVEN: V2 §3]
-    LINK 8  — Partition Space ≥ 2^384               [PROVEN: ModelSecurity §B-E]
-    LINK 9  — Physical Infeasibility                [PROVEN: ModelSecurity §F]
-    LINK 10 — Weights Don't Leak Key                [HYPOTHESIS: IsSurjective → V3 §1]
-    LINK 11 — Wrong Key = Different Sub-Model       [PROVEN: V3 §2]
-    LINK 12 — Gate Composes with Transformers       [PROVEN: V3 §3]
-    LINK 13 — Camouflage Preserves Correct Output   [PROVEN: V4 §2, NEW]
-    LINK 14 — All-1s ≠ Correct Output (conditional) [PROVEN: V4 §3, NEW]
-    LINK 15 — Permutation Is Isomorphism            [PROVEN: V4 §4, NEW]
-    LINK 16 — Grant Patching Is Correct             [PROVEN: V4 §5, NEW]
-    LINK 17 — Noise Dims Unidentifiable (matched)   [AXIOM: V4.2 §7, conditioned on IsDistributionMatched]
-    LINK 18 — Gradient Probing Fails (matched)      [AXIOM: V4.2 §8, conditioned on IsDistributionMatched]
-    LINK 19 — Collusion → Perm Recovery (n!)        [PROVEN: V4 §6, NEW]
-    LINK 20 — Links 1-19 → Distributable Safety     [PROVEN: V4 §9]
-
-    14 proven links + 2 non-trivial axioms (PRF, camouflage indist.)
-    + 2 opaque predicates (Recovers, IsDistributionMatched)
-    + 1 hypothesis (surjectivity).
-
-    V4.2 errata resolved (adversarial-fit review):
-    • Both V4 axioms conditioned on `IsDistributionMatched` opaque
-      predicate, preventing `False` derivation from degenerate schemes.
-    • `camouflage_preserves_logits` reworked to prove W₂ row camouflage
-      through the output sum (was incorrectly assuming activation equality).
-
-    V4.1 errata resolved (Tao-style review):
-    • Axioms have type `¬ P` (deny distinguishing), not `True`.
-    • `steganographic_output` restored from V2.
-    • `noise_corrupts_logits` proven under explicit nonzero-sum hypothesis.
-    • Collusion theorem is structural (perm recovery + dim scrambling). -/
-theorem end_to_end_chain_v4 :
+/-- Historical alias for the same explicitly conditional wrapper.
+    This is not a supported end-to-end confidentiality claim. -/
+theorem end_to_end_chain_v4
+    (h_enumeration : FullEnumerationAssumption 768 2) :
     DistributableSafetyV4 768 2 :=
-  standard_is_distributable_safe_v4
+  standard_is_distributable_safe_v4 h_enumeration
 
 
 end Schemen.CamouflageSecurity

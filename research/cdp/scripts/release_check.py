@@ -40,7 +40,6 @@ CANONICAL_DIGESTS = {
 
 EXPECTED_AXIOMS = {
     "Recovers",
-    "prf_brute_force_optimal",
     "IsDistributionMatched",
     "camouflage_indistinguishable",
     "gradient_probing_hard",
@@ -283,8 +282,8 @@ def check_lean_inventory() -> None:
         strip_lean_comments(path.read_text(encoding="utf-8")) for path in paths
     )
     theorem_count = len(re.findall(r"^\s*(?:theorem|lemma)\s+", stripped, re.M))
-    if theorem_count != 312:
-        fail(f"expected 312 theorem/lemma declarations, found {theorem_count}")
+    if theorem_count != 317:
+        fail(f"expected 317 theorem/lemma declarations, found {theorem_count}")
     if re.search(r"\bsorry\b|\badmit\b", stripped):
         fail("active Lean source contains sorry or admit")
     axiom_names = set(
@@ -295,8 +294,8 @@ def check_lean_inventory() -> None:
     if re.search(r"^\s*module\s*$", stripped, re.M):
         fail("standalone module command reintroduced into mixed proof graph")
     print(
-        "Lean inventory: 21 modules, 312 theorem/lemma declarations, "
-        "5 declared custom axioms, no sorry/admit"
+        "Lean inventory: 21 modules, 317 theorem/lemma declarations, "
+        "4 declared custom axioms, no sorry/admit"
     )
 
 

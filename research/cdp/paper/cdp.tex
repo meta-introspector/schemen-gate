@@ -293,11 +293,11 @@ integer or activation tensor does not authenticate itself.
     exclusion, active preservation, gradient isolation, and aligned
     FFN weight confinement follow.
     \item Formal verification in Lean~4: the checked-in proof
-    inventory contains 21 modules and 312 active theorem/lemma declarations
-    with no active \texttt{sorry} or \texttt{admit} declarations.  Five
+    inventory contains 21 modules and 317 active theorem/lemma declarations
+    with no active \texttt{sorry} or \texttt{admit} declarations.  Four
     project-specific \texttt{axiom} declarations remain: two opaque
-    predicates, one conditional PRF enumeration bound, and two historical
-    statistical consequences.  The core Hadamard and aligned FFN confinement
+    predicates and two historical statistical consequences. The former
+    global recovery bound now requires an explicit, unvalidated premise.  The core Hadamard and aligned FFN confinement
     results do not depend on them.  The two statistical declarations
     (\texttt{camouflage\_indistinguishable},
     \texttt{gradient\_probing\_hard}) are excluded from the paper's claim set
@@ -1432,24 +1432,30 @@ $\bW_1/\bW_2$ slice theorem.
 \section{Formal Verification in Lean~4}
 \label{sec:formal}
 
-The checked-in proof inventory contains 21 Lean modules and 312 active
+The checked-in proof inventory contains 21 Lean modules and 317 active
 \texttt{theorem}/\texttt{lemma} declarations.  A clean build under
 the pinned Lean/Mathlib toolchain contains no active \texttt{sorry}
 or \texttt{admit} declarations.  The core Hadamard-gate, gradient,
 and aligned FFN weight-confinement theorems are unconditional
 algebraic results; a checked-in \texttt{\#print axioms} audit shows
-that the nine headline algebraic and placement theorems use only
+that thirteen selected algebraic, placement, output-validity, and
+independence theorems use only
 Lean/Mathlib's standard logical axioms.
 
-The source tree separately contains five project-specific
-\texttt{axiom} declarations.  Two declare opaque predicates and one
-states a conditional PRF enumeration bound:
+The source tree separately contains four project-specific
+\texttt{axiom} declarations. Two declare opaque predicates:
 \begin{itemize}[nosep]
     \item \texttt{Recovers} (opaque predicate)
-    \item \texttt{prf\_brute\_force\_optimal}
     \item \texttt{IsDistributionMatched} (opaque predicate)
 \end{itemize}
-They are not premises of the core gate-zeroing theorems.
+They are not premises of the audited supported theorems. The former global
+recovery-cost axiom has been removed. Historical wrappers now require an explicit
+\texttt{FullEnumerationAssumption}, for which no instance is supplied.
+Candidate cardinality does not establish recovery work or key
+entropy. The softmax lemma establishes a valid real-valued distribution, not
+confidence, correctness, or statistical concealment. The selected-output and
+generation independence results instead compare states that agree on the
+active surface while fixing the specified public functions and inputs.
 
 Two further statistical axioms are retained in historical
 conditional modules so that the old theorem chain remains
@@ -1490,10 +1496,9 @@ mask orthogonality, wrong-mask-reads-zero \\
 Placement constraints: support preservation, LayerNorm negative
 result, residual block compositionality \\
 \texttt{ModelSecurityV3.lean} &
-Key hierarchy: confinement composition and recovery-conditioned
-chain under the PRF axiom; earlier weight- and
-partition-indistinguishability claims are excluded from this paper's claim
-set, with their conditional declarations retained for audit (see axiom list) \\
+Selected-coordinate output locality and independence under fixed active
+values, projection, and bias. Historical weight/partition recovery chains
+are excluded from the supported claim set \\
 \texttt{CapacitySecurity.lean} &
 Cross-mask additive cancellation under disjoint support \\
 \texttt{BiometricSecurity.lean} &
