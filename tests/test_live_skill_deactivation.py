@@ -113,7 +113,7 @@ class LiveSkillRegistry:
             if r.skill_id in self._active_skills:
                 return r
 
-        return results[0]
+        raise ValueError("No active skills in requested scope")
 
     def dispatch_all(self, query: str, **kwargs):
         """Dispatch among ALL skills (ignoring deactivation)."""
@@ -219,11 +219,16 @@ class TestGatedDeactivation:
         """Deactivating a gated skill: its regime is algebraically gone."""
         self.registry.deactivate("canvas")
 
-        r = self.registry.dispatch(
-            "create interactive visualization",
-            gate_regime=list(SKILLS).index("canvas"),
+        with pytest.raises(ValueError, match="No active skills in requested scope"):
+            self.registry.dispatch(
+                "create interactive visualization",
+                gate_regime=list(SKILLS).index("canvas"),
+            )
+        self.registry.activate("canvas")
+        result = self.registry.dispatch(
+            "create interactive visualization", gate_regime=list(SKILLS).index("canvas")
         )
-        assert r.skill_id != "canvas"
+        assert result.skill_id == "canvas"
 
     def test_gated_skills_still_orthogonal_after_deactivation(self):
         """Remaining active skills maintain orthogonality."""

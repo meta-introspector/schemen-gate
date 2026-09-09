@@ -33,7 +33,9 @@ therefore requires verifier-owned identity and scope.
 ## Scope and storage
 
 - Once `SkillRegistry` is configured with a Gate, every registered skill and
-  every dispatch—including `dispatch_top_k`—requires an exact Regime.
+  every dispatch—including `dispatch_top_k`—requires an exact Regime. Only
+  skills registered to that Regime are eligible; absent eligible skills fail
+  closed, and nonfinite embeddings are rejected before normalization.
 - `PartitionMap.register` defaults to `IMMUTABLE`; write authority must be
   selected explicitly.
 - Cargo manifest schema v7 binds `gate_embeddings_at_rest` as authenticated
@@ -41,6 +43,15 @@ therefore requires verifier-owned identity and scope.
 - Direct `GatedRAGAdapter.ingest` and `ingest_many` calls require the caller to
   select `gate_embedding=True` or `False`. Inference gating does not imply that
   stored vectors were gated.
+
+## Activation selection
+
+`GateMask.apply`, the optional PyTorch layer, and the C++ primitive select
+positive zero for excluded coordinates even when their input or incoming
+Torch gradient is NaN/Inf. Active values remain unchanged. This is a local
+execution boundary, not a whole-graph nonfinite sanitizer or optimizer policy.
+NumPy retains its float64-mask dtype promotion; unsupported masked/nonnumeric
+arrays and multiplication-only backends are rejected explicitly.
 
 ## Imported metadata and identity
 
