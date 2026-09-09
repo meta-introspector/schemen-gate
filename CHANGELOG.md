@@ -4,6 +4,11 @@ All notable changes to Schemen Gate are documented here.
 
 ## Unreleased
 
+- Add an optional PyTorch `GateLayer` and functional mask primitive, plus a
+  C++20 LibTorch header using ATen CPU/CUDA multiplication and autograd.
+  Include dtype, gradient, stride, mask-copy, checkpoint, and rejection tests,
+  a small-to-larger FFN example, native CPU CI, and explicit CUDA acceptance.
+
 - Add broker 0.3.0 opt-in delegated authorization with Ed25519 signatures at
   every authority transition, signed approval callbacks, private-key client
   authentication, DPoP token exchange, encrypted durable state and Calendar

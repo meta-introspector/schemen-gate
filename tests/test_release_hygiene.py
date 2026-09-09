@@ -63,6 +63,7 @@ EXPECTED_TOP_LEVEL = {
     "SECURITY.md",
     "docs",
     "examples",
+    "native",
     "pyproject.toml",
     "release-contract.json",
     "requirements",

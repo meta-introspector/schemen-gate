@@ -80,6 +80,11 @@ model hooks, freeze a backbone, or provide a masked optimizer wrapper. A normal
 optimizer with decoupled weight decay can move an inactive parameter even when
 its loss gradient is zero.
 
+The optional [PyTorch module and C++ API](PYTORCH_AND_CPP.md) expose the same
+execution primitive through ATen CPU/CUDA dispatch. `GateLayer` copies the
+resolved mask once and moves it with the module. It does not change the
+optimizer or whole-model confinement requirements above.
+
 ### 3. Public mask-aware adaptation, then frozen tenant training
 
 A shared backbone may first be adapted on public data with all intended masks,

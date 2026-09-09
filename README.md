@@ -97,6 +97,10 @@ explicit offline-fixture revocation policy; production requirements are in the
 For the NumPy-only algebra, run `python examples/quickstart.py`. For portable
 credential loading and signing, run `python examples/pkcs12_identity.py`.
 
+For a reusable PyTorch module and a C++ LibTorch execution API, see
+[PyTorch, C++, and CUDA integration](docs/PYTORCH_AND_CPP.md). The primitive
+uses ATen CPU/CUDA multiplication and autograd on an already-authorized mask.
+
 ## See the authority change
 
 Open the [live digit-model demo](https://demo.sekos.ai/cdp). Select the digit-7
