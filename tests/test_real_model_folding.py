@@ -87,10 +87,11 @@ class TestRealModelFolding:
     """Fold/unfold real DistilBERT hidden states and measure accuracy."""
 
     @pytest.fixture(autouse=True, scope="class")
-    def setup_hidden_states(self):
+    @classmethod
+    def setup_hidden_states(cls):
         hidden = _get_hidden_states(CLASSIFICATION_TEXTS)
-        TestRealModelFolding._hidden = hidden
-        TestRealModelFolding._n_dim = hidden.shape[1]
+        cls._hidden = hidden
+        cls._n_dim = hidden.shape[1]
 
     def test_hidden_states_shape(self):
         assert self._hidden.shape == (20, 768)

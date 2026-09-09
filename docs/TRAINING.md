@@ -2,6 +2,10 @@
 
 [Back to Schemen Gate](../README.md)
 
+**Status: experimental training approaches; not production-ready.** The retained
+experiments validate specific protocols under their stated controls. They do not
+establish general utility, deployed isolation, or production support.
+
 ## Training is a lifecycle choice
 
 The Binary Activation papers report several training protocols. They answer
@@ -25,12 +29,12 @@ masks = [GateMask.from_file(f"masks/regime_{r}.npy") for r in range(n_regimes)]
 
 # Build once per device, not inside the hot path.
 gate_bank = torch.stack(
-    [mask.to_torch(device="cuda", dtype=torch.float32) for mask in masks]
+    [mask.to_torch(device="cuda", dtype=torch.bool) for mask in masks]
 )
 
 # hidden: [batch, 768]; regime_ids: [batch], authority-resolved integers.
 hidden = encoder(input_ids).last_hidden_state[:, 0]
-gated = hidden * gate_bank[regime_ids]
+gated = torch.where(gate_bank[regime_ids], hidden, torch.zeros_like(hidden))
 logits = classifier(gated)
 loss = torch.nn.functional.cross_entropy(logits, labels)
 loss.backward()
@@ -59,8 +63,9 @@ def gated_ffn(x, up_projection, down_projection, activation, gate_mask):
     return down_projection(gated)
 ```
 
-That multiply gives an exact local forward zero and zero loss gradient at the
-inactive activation coordinates. Exact parameter-state confinement additionally
+That selection gives positive zero at inactive activation coordinates and
+zeros their incoming gradients, including nonfinite values, at the local gate
+boundary. Nonfinite operations elsewhere in the graph can still produce NaNs. Exact parameter-state confinement additionally
 requires all of the following:
 
 1. Freeze attention, embeddings, normalization, residual/shared parameters,
@@ -80,14 +85,28 @@ model hooks, freeze a backbone, or provide a masked optimizer wrapper. A normal
 optimizer with decoupled weight decay can move an inactive parameter even when
 its loss gradient is zero.
 
+The optional [PyTorch module and C++ API](PYTORCH_AND_CPP.md) expose the same
+execution primitive through ATen CPU/CUDA dispatch. `GateLayer` copies the
+resolved mask once and moves it with the module. It does not change the
+optimizer or whole-model confinement requirements above.
+
 ### 3. Public mask-aware adaptation, then frozen tenant training
 
 A shared backbone may first be adapted on public data with all intended masks,
-then frozen before tenant-stage training. The paper reports preliminary
-DistilBERT evidence that this can recover utility, but the retained comparison
-is not a causal estimate: extra training, distillation, and mask awareness are
-confounded. Treat this as an experimental initialization protocol, not a
-proven default.
+then frozen before tenant-stage training. This approach is **experimental and
+not production-ready**. The preliminary three-seed comparison confounded extra
+training, distillation, and mask awareness. A successor matched factorial has
+one complete full seed (seed 42, R=8): it reports +1.331 percentage points for
+mask awareness and +1.438 points for the complete pipeline. The adapted arms
+match examples, batch order, dropout schedule, optimizer steps, teacher
+evaluations, and student model-pass counts; the reported separation and
+execution-rejection checks pass.
+
+These are working, experimentally validated results within that protocol,
+not a multi-seed general utility guarantee. The reduced pilot was negative and
+is retained as a smoke/debug result. See the
+[experiment inventory](../research/cdp/docs/experiment-data-inventory.md#public-gate-adaptation-factorial)
+for the preliminary and successor artifacts and their distinct limitations.
 
 Never mix tenant-private data into the public adaptation stage if the resulting
 shared weights are supposed to remain public.

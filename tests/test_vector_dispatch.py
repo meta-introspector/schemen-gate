@@ -524,3 +524,47 @@ raise SystemExit(1)
 
         r3 = registry.dispatch("hooks automation agent events scripts hooks")
         assert r3.skill_id == "create-hook"
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), -float("inf")])
+@pytest.mark.parametrize("gated", [False, True])
+def test_nonfinite_embeddings_are_rejected(bad: float, gated: bool) -> None:
+    value = np.array([1.0, 2.0, 3.0, 4.0])
+    registry = SkillRegistry(
+        lambda _: value,
+        **({"gate_key": GATE_KEY, "n_dims": 4, "n_regimes": 2} if gated else {}),
+    )
+    regime = 0 if gated else None
+    registry.register("valid", "valid", regime_id=regime)
+    value[1] = bad
+    with pytest.raises(ValueError, match="finite"):
+        registry.register("invalid", "invalid", regime_id=regime)
+    assert registry.skill_count == 1
+    with pytest.raises(ValueError, match="finite"):
+        registry.dispatch("query", gate_regime=regime)
+    with pytest.raises(ValueError, match="finite"):
+        registry.dispatch_top_k("query", gate_regime=regime)
+
+
+@pytest.mark.parametrize("zero_query", [False, True])
+def test_gated_ranking_never_returns_foreign_skills(zero_query: bool) -> None:
+    own = GateMask.derive(GATE_KEY, 0, 4, 2).to_numpy()
+    foreign = GateMask.derive(GATE_KEY, 1, 4, 2).to_numpy()
+    vectors = {"own": own, "foreign": foreign, "query": np.zeros(4) if zero_query else -own}
+    registry = SkillRegistry(vectors.__getitem__, gate_key=GATE_KEY, n_dims=4, n_regimes=2)
+    registry.register("foreign", "foreign", regime_id=1)
+    registry.register("own", "own", regime_id=0)
+    result = registry.dispatch("query", gate_regime=0)
+    assert result.skill_id == "own"
+    assert result.score <= 0
+    assert result.runner_up_id is None
+    assert [r.skill_id for r in registry.dispatch_top_k("query", 5, gate_regime=0)] == ["own"]
+
+
+def test_foreign_only_registry_has_no_eligible_results() -> None:
+    registry = SkillRegistry(lambda _: np.ones(4), gate_key=GATE_KEY, n_dims=4, n_regimes=2)
+    registry.register("foreign", "foreign", regime_id=1)
+    with pytest.raises(ValueError, match="No skills registered for gate_regime"):
+        registry.dispatch("query", gate_regime=0)
+    with pytest.raises(ValueError, match="No skills registered for gate_regime"):
+        registry.dispatch_top_k("query", gate_regime=0)

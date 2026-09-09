@@ -76,7 +76,7 @@ def cotrain(width: int = N_DIMS, steps: int = STEPS):
         r = step % N_REGIMES
         x = torch.randn(BATCH, D_IN, generator=tg)
         y = (x @ teachers[r]).argmax(dim=-1)
-        logits = model[2](model[1](model[0](x)) * masks[r])
+        logits = model[2](torch.where(masks[r].bool(), model[1](model[0](x)), 0.0))
         loss = torch.nn.functional.cross_entropy(logits, y)
         opt.zero_grad()
         loss.backward()
@@ -90,7 +90,7 @@ def accuracy(model, teacher, mask, samples=2048, seed=SEED):
     with torch.no_grad():
         x = torch.randn(samples, D_IN, generator=torch.Generator().manual_seed(seed))
         y = (x @ teacher).argmax(dim=-1)
-        logits = model[2](model[1](model[0](x)) * mask)
+        logits = model[2](torch.where(mask.bool(), model[1](model[0](x)), 0.0))
         return (logits.argmax(dim=-1) == y).float().mean().item()
 
 
@@ -275,7 +275,7 @@ def main() -> int:
     # Referenced eval inputs (regime 0 teacher)
     x = torch.randn(512, D_IN, generator=torch.Generator().manual_seed(SEED + 1))
     with torch.no_grad():
-        ref_logits_r0 = model[2](model[1](model[0](x)) * masks[0]).numpy()
+        ref_logits_r0 = model[2](torch.where(masks[0].bool(), model[1](model[0](x)), 0.0)).numpy()
 
     # --- Phase 2: grant regime 0 to the subject; verify R4 exactness ---
     grant0 = {

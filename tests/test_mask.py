@@ -374,3 +374,51 @@ class TestProtocolVectors:
         assert derive_partition(key, n_dims, n_regimes) == [
             list(partition) for partition in expected
         ]
+
+
+@pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64])
+def test_nonfinite_exclusions_are_positive_zero(dtype):
+    mask = GateMask.from_indices([0, 1, 2, 3], n_dims=8)
+    x = np.array([np.nan, np.inf, -np.inf, -0.0] * 2, dtype=dtype)
+    original = x.copy()
+    with np.errstate(all="raise"):
+        y = mask.apply(x)
+    np.testing.assert_array_equal(y[:4], x[:4])
+    np.testing.assert_array_equal(y[4:], np.zeros(4, dtype=dtype))
+    assert not np.signbit(y[4:]).any()
+    assert np.signbit(y[3])
+    assert y.dtype == np.result_type(x.dtype, np.float64)
+    np.testing.assert_array_equal(x, original)
+
+
+def test_unknown_array_backend_is_rejected():
+    class MultiplicationOnly:
+        shape = (2,)
+
+        def __mul__(self, other):
+            raise AssertionError("unsafe multiplication reached")
+
+    with pytest.raises(TypeError, match="NumPy array or PyTorch tensor"):
+        GateMask.from_indices([0], n_dims=2).apply(MultiplicationOnly())
+
+
+@pytest.mark.parametrize("dtype", [np.bool_, np.int32, np.float32, np.complex64])
+def test_numpy_dtype_promotion_is_preserved(dtype):
+    x = np.array([1, 2], dtype=dtype)
+    y = GateMask.from_indices([0], n_dims=2).apply(x)
+    assert y.dtype == np.result_type(dtype, np.float64)
+    np.testing.assert_array_equal(y, [1, 0])
+
+
+@pytest.mark.parametrize(
+    "hidden",
+    [
+        np.array(["active", "inactive"]),
+        np.array([1, 2], dtype=object),
+        np.array(["2026-01-01", "2026-01-02"], dtype="datetime64[D]"),
+        np.ma.array([123.0, 456.0], mask=[True, False]),
+    ],
+)
+def test_numpy_nonnumeric_and_masked_arrays_are_rejected(hidden):
+    with pytest.raises(TypeError, match="unmasked numeric or boolean"):
+        GateMask.from_indices([0], n_dims=2).apply(hidden)

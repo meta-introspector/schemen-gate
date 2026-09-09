@@ -1130,7 +1130,7 @@ class VectorPayload:
 
         detached_source = np.array(source, dtype=np.float64, copy=True, order="C")
         detached_source.setflags(write=False)
-        gated_source = detached_source * mask_array
+        gated_source = np.where(mask_array.astype(bool), detached_source, 0.0)
         output = bridge.project(detached_source) if bridge is not None else detached_source
         gated_output = bridge.project(gated_source) if bridge is not None else gated_source
         if output.nbytes > _MAX_FRAME_BYTES or gated_output.nbytes > _MAX_FRAME_BYTES:

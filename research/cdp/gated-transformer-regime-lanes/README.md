@@ -1,5 +1,9 @@
 # Schemen-gated Transformer regime lanes
 
+**Hydra status: experimental; not production-ready.** Hydra names this
+Transformer regime-lane research track; retained controlled validation is
+evidence within the tested scope, not a deployed production guarantee.
+
 This is the curated publication surface for the gated Transformer regime-lane
 research program.
 

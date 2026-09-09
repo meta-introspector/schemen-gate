@@ -28,6 +28,11 @@ bug; that tightening is not treated as supported-input breakage.
 
 ## Optional capabilities
 
+The optional `schemen_gate.torch` module exposes `GateLayer` and `apply_mask`
+under this Python API contract once released; it is imported explicitly and
+does not add Torch to the core dependency set. The C++ header is distributed
+through Git and must be built against the consumer's exact LibTorch ABI.
+
 An optional public API has the same stability contract once its documented
 extra is installed. Importing the base package does not install or initialize
 those dependencies. Missing extras fail at the point the optional capability is
@@ -50,6 +55,10 @@ created them. A newer library release does not rewrite those receipts or imply
 that every old experimental artifact is a supported runtime input.
 
 ## Repository-only surfaces
+
+Hydra (Transformer regime lanes) and training/adaptation protocols are
+**experimental and not production-ready**. Their controlled validation does
+not promote them to supported production implementations.
 
 Research runners, paper build files, release-maintainer scripts, benchmarks,
 and checked-in result records are reviewable and versioned with the Git tag,

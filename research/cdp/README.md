@@ -68,7 +68,12 @@ LoRA deployments and presents CDP as a structural remedy. The supplied final
 PDF is preserved byte-for-byte. Its [publication record](docs/lora-paper-publication.md)
 identifies the artifact and separates this manuscript from later research claims.
 
-## Companion gated-Transformer study
+## Hydra: experimental gated-Transformer study
+
+**Status: experimental; not production-ready.** Hydra is the companion
+Transformer regime-lane research track. The original CDP training/adaptation
+protocols also remain experimental; controlled validation is scoped to the
+retained protocols and does not establish a production deployment.
 
 The later [Schemen-gated Transformer regime-lane paper](gated-transformer-regime-lanes/SCHEMEN_GATED_TRANSFORMER_REGIME_LANES_PAPER.md)
 is published beside, but not merged into, the original CDP manuscript's claim

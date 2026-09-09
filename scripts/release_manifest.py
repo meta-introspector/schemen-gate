@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 
 # Manifest generation executes one fixed Git argument vector without a shell.
@@ -52,7 +53,7 @@ def main() -> int:
 
     try:
         expected = render_manifest()
-    except RuntimeError as exc:
+    except (RuntimeError, OSError, ValueError) as exc:
         print(str(exc))
         return 2
     if args.write:
@@ -63,8 +64,23 @@ def main() -> int:
     if not MANIFEST.is_file():
         print(f"missing {MANIFEST.name}")
         return 1
-    if MANIFEST.read_text(encoding="utf-8") != expected:
+    actual = MANIFEST.read_text(encoding="utf-8")
+    if actual != expected:
         print(f"{MANIFEST.name} does not match the tracked release tree")
+        print(
+            "".join(
+                difflib.unified_diff(
+                    actual.splitlines(keepends=True),
+                    expected.splitlines(keepends=True),
+                    fromfile=MANIFEST.name,
+                    tofile="expected tracked tree",
+                )
+            ),
+            end="",
+        )
+        print(
+            "Stage intended additions/deletions, then run: python scripts/release_manifest.py --write"
+        )
         return 1
     print(f"verified {MANIFEST.name} for {len(tracked_paths())} tracked files")
     return 0

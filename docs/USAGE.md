@@ -195,7 +195,7 @@ schema-version boundary, and deprecation rules are defined in
 
 | Method | Purpose |
 |---|---|
-| `.apply(hidden)` | Element-wise gate for NumPy, Torch, or compatible tensors |
+| `.apply(hidden)` | Select active values and positive zero elsewhere for numeric NumPy arrays or Torch tensors |
 | `.mask` | Return a detached, read-only owning copy of the binary mask |
 | `.to_torch(device, dtype)` | Create an independent Torch tensor |
 | `.to_numpy()` | Return a writable copy |
@@ -204,6 +204,13 @@ schema-version boundary, and deprecation rules are defined in
 | `.to_dict()` | Serialize active indices and metadata |
 | `.save(path)` | Save `.npy` plus an optional JSON sidecar |
 | `mask_a \| mask_b` | Create an explicit union of same-width supports |
+
+NumPy output retains promotion with the float64 mask; Torch output retains its
+input dtype. Excluded NaN/Inf and negative zero become positive zero, while
+active values are preserved. NumPy masked/nonnumeric arrays and generic
+multiplication-only backends are rejected. For Torch, excluded incoming
+gradients are also zeroed at this local boundary; this does not sanitize the
+rest of a computation graph.
 
 ## Security and identity FAQ
 

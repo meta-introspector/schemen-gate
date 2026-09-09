@@ -63,6 +63,7 @@ EXPECTED_TOP_LEVEL = {
     "SECURITY.md",
     "docs",
     "examples",
+    "native",
     "pyproject.toml",
     "release-contract.json",
     "requirements",
@@ -293,6 +294,53 @@ def test_release_manifest_explains_when_git_metadata_is_absent(tmp_path: Path) -
     assert result.returncode == 2
     assert "requires a Git checkout" in result.stdout
     assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize("change", ["edit", "add", "delete", "missing"])
+def test_release_manifest_rejects_and_identifies_tree_drift(tmp_path: Path, change: str) -> None:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    shutil.copy2(ROOT / "scripts" / "release_manifest.py", scripts)
+    source = tmp_path / "sample.txt"
+    source.write_text("original\n", encoding="utf-8")
+
+    def git(*args: str) -> None:
+        subprocess.run(["git", "-C", str(tmp_path), *args], check=True, capture_output=True)
+
+    def manifest(action: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, scripts / "release_manifest.py", action],
+            cwd=tmp_path,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    git("init")
+    git("add", "sample.txt", "scripts/release_manifest.py")
+    assert manifest("--write").returncode == 0
+    assert manifest("--verify").returncode == 0
+    if change == "edit":
+        source.write_text("changed\n", encoding="utf-8")
+    elif change == "add":
+        source = tmp_path / "new.txt"
+        source.write_text("new\n", encoding="utf-8")
+        git("add", "new.txt")
+    elif change == "delete":
+        git("rm", "--force", "sample.txt")
+    else:
+        source.unlink()
+
+    before = (tmp_path / "RELEASE_MANIFEST.sha256").read_bytes()
+    result = manifest("--verify")
+    assert result.returncode == (2 if change == "missing" else 1)
+    assert source.name in result.stdout
+    assert "Traceback" not in result.stderr
+    assert (tmp_path / "RELEASE_MANIFEST.sha256").read_bytes() == before
+    if change != "missing":
+        assert "--write" in result.stdout
+        assert manifest("--write").returncode == 0
+        assert manifest("--verify").returncode == 0
 
 
 def test_ci_builds_the_pinned_lean_research_bundle() -> None:

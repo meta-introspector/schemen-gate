@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.20)
+project(schemen_gate_native LANGUAGES CXX)
+
+find_package(Torch 2.13 REQUIRED)
+add_library(schemen_gate_torch INTERFACE)
+target_include_directories(schemen_gate_torch INTERFACE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include ${TORCH_INCLUDE_DIRS})
+target_link_libraries(schemen_gate_torch INTERFACE ${TORCH_LIBRARIES})
+target_compile_features(schemen_gate_torch INTERFACE cxx_std_20)
+separate_arguments(SCHEMEN_TORCH_FLAGS NATIVE_COMMAND "${TORCH_CXX_FLAGS}")
+target_compile_options(schemen_gate_torch INTERFACE ${SCHEMEN_TORCH_FLAGS})
+
+include(CTest)
+option(SCHEMEN_GATE_REQUIRE_CUDA "Require the CUDA hardware acceptance test" OFF)
+if(BUILD_TESTING)
+  add_executable(gate_test tests/gate_test.cpp)
+  target_link_libraries(gate_test PRIVATE schemen_gate_torch)
+  add_test(NAME gate_cpu COMMAND gate_test cpu)
+  if(SCHEMEN_GATE_REQUIRE_CUDA)
+    add_test(NAME gate_cuda COMMAND gate_test cuda)
+  endif()
+endif()

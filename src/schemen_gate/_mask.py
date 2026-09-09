@@ -120,9 +120,8 @@ class GateMask:
     """A binary gate mask for a single regime.
 
     The mask is a 1-D float64 array of length ``n_dims`` with values in
-    {0.0, 1.0}.  Applying it to a hidden activation vector via
-    element-wise multiplication confines the signal to the active
-    partition.
+    {0.0, 1.0}. Applying it selects the active values and writes positive
+    zero into excluded coordinates, including excluded NaN/Inf values.
 
     Construction options (no crypto)::
 
@@ -357,10 +356,12 @@ class GateMask:
     # ------------------------------------------------------------------
 
     def apply(self, hidden: Any) -> Any:
-        """Element-wise gate: ``hidden * mask``.
+        """Select active values; write positive zero into every excluded coordinate.
 
-        Works with numpy arrays, torch tensors, or shaped array objects
-        supporting ``__mul__``. Scalar and shapeless inputs are rejected.
+        Works with numeric/bool NumPy arrays and PyTorch tensors. NumPy
+        retains promotion with the float64 mask; Torch retains input dtype.
+        Masked arrays and other array backends are rejected rather than
+        discarding validity masks or relying on unsafe multiplication.
         For torch tensors the mask is converted on use.
         """
         shape = getattr(hidden, "shape", None)
@@ -380,11 +381,19 @@ class GateMask:
             import torch
 
             if isinstance(hidden, torch.Tensor):
-                t = self.to_torch(device=hidden.device, dtype=hidden.dtype)
-                return hidden * t
+                t = self.to_torch(device=hidden.device, dtype=torch.bool)
+                return torch.where(
+                    t, hidden, torch.zeros((), device=hidden.device, dtype=hidden.dtype)
+                )
         except ImportError:
             pass
-        return hidden * self._mask
+        if not isinstance(hidden, np.ndarray):
+            raise TypeError("Gate input must be a NumPy array or PyTorch tensor")
+        if np.ma.isMaskedArray(hidden) or hidden.dtype.kind not in "biufc":
+            raise TypeError("Gate input must be an unmasked numeric or boolean NumPy array")
+        # Retain the established NumPy promotion with the float64 mask.
+        selected = np.where(self._mask.astype(bool), hidden, np.zeros((), dtype=hidden.dtype))
+        return selected.astype(np.result_type(hidden.dtype, self._mask.dtype), copy=False)
 
     # ------------------------------------------------------------------
     # Conversions

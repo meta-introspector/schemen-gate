@@ -63,6 +63,8 @@ def test_gated_transformer_snapshot_has_exact_source_custody() -> None:
     assert len(imported) == source["source_file_count"]
     assert source["source_size_bytes"] == 314799
     assert {item["path"] for item in source["content_transformations"]} == {
+        "README.md",
+        "CLAIM_LEDGER.md",
         "EVIDENCE_ARCHIVE.md",
         "REPRODUCIBILITY.md",
         "SCHEMEN_GATED_TRANSFORMER_REGIME_LANES_PAPER.md",
