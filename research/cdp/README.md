@@ -60,6 +60,14 @@ cd research/cdp/paper
 latexmk -pdf -interaction=nonstopmode -halt-on-error cdp.tex
 ```
 
+## LoRA leakage manuscript
+
+[Multi-Tenant LoRA: Attention Is All You Bleed](output/pdf/lora-attention-is-all-you-bleed-final.pdf)
+by Ryan McCormick (May 2026) studies cross-tenant leakage in merged-backbone
+LoRA deployments and presents CDP as a structural remedy. The supplied final
+PDF is preserved byte-for-byte. Its [publication record](docs/lora-paper-publication.md)
+identifies the artifact and separates this manuscript from later research claims.
+
 ## Companion gated-Transformer study
 
 The later [Schemen-gated Transformer regime-lane paper](gated-transformer-regime-lanes/SCHEMEN_GATED_TRANSFORMER_REGIME_LANES_PAPER.md)

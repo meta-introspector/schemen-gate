@@ -222,6 +222,8 @@ experiment code, launchers, and retained receipts. Begin with:
 - [Transformer boundary paper](research/cdp/output/pdf/binary-activation-transformers.pdf)
   and [source](research/cdp/paper/split/binary-activation-transformers.tex).
 - [Full manuscript](research/cdp/paper/cdp.pdf) and [source](research/cdp/paper/cdp.tex).
+- [Multi-Tenant LoRA: Attention Is All You Bleed](research/cdp/output/pdf/lora-attention-is-all-you-bleed-final.pdf)
+  (May 2026 manuscript), with its [publication record](research/cdp/docs/lora-paper-publication.md).
 - [Schemen-gated Transformer regime-lane paper](research/cdp/gated-transformer-regime-lanes/SCHEMEN_GATED_TRANSFORMER_REGIME_LANES_PAPER.md)
   and its [results, failures, and corrections](research/cdp/gated-transformer-regime-lanes/RESULTS_AND_CORRECTIONS.md).
 
