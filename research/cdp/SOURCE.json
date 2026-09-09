@@ -6,5 +6,45 @@
   "imported_at_utc": "2026-08-27T05:27:31Z",
   "history_imported": false,
   "license": "Multi-license; see LICENSES.md",
-  "note": "History-free snapshot of the reviewed research sources. Private planning, editor configuration, and unrelated proof modules are excluded. Gate-local adaptations change canonical links to this repository and bind experiments to the current Gate source version. Absolute workstation paths in historical receipts were normalized to explicit portable markers during public-snapshot hygiene. Numerical results, dependency versions, source commits, and artifact hashes recorded by the experiments were not rewritten; the portable path markers are not installation or runtime dependencies. Fourteen historical run records produced under a private companion authorization harness are shipped as documented public evidence exports; each carries a public_evidence_export block with the original-record SHA-256 and every transformed field path, and experiments/results/README.md indexes them. Measured values are unchanged."
+  "note": "History-free snapshot of the reviewed research sources. Private planning, editor configuration, and unrelated proof modules are excluded. Gate-local adaptations change canonical links to this repository and bind experiments to the current Gate source version. Absolute workstation paths in historical receipts were normalized to explicit portable markers during public-snapshot hygiene. Numerical results, dependency versions, source commits, and artifact hashes recorded by the experiments were not rewritten; the portable path markers are not installation or runtime dependencies. Fourteen historical run records produced under a private companion authorization harness are shipped as documented public evidence exports; each carries a public_evidence_export block with the original-record SHA-256 and every transformed field path, and experiments/results/README.md indexes them. Measured values are unchanged. Gate-local formal-claim corrections are enumerated below; the original import commit and historical experimental records are retained.",
+  "content_transformations": [
+    {
+      "base_repository": "https://github.com/sekosai/schemen-gate",
+      "base_commit": "096c62213085f936d325a4991301265e74d0e92d",
+      "paths": [
+        "proofs/security/ModelSecurity.lean",
+        "proofs/security/ModelSecurityV2.lean",
+        "proofs/security/ModelSecurityV3.lean",
+        "proofs/security/ModelSecurityV4.lean",
+        "proofs/security/DistributableClaims.lean",
+        "proofs/security/DistributedSecurity.lean",
+        "proofs/security/GateSecurity.lean",
+        "proofs/security/GenerationIsolation.lean"
+      ],
+      "reason": "Remove the global recovery-cost axiom in favor of an explicit unvalidated caller premise; preserve narrower cardinality and output-validity aliases; state the hypotheses of local independence results."
+    },
+    {
+      "base_repository": "https://github.com/sekosai/schemen-gate",
+      "base_commit": "096c62213085f936d325a4991301265e74d0e92d",
+      "paths": [
+        "scripts/lean_claim_audit.lean",
+        "scripts/check_lean_claims.sh",
+        "scripts/release_check.py",
+        "experiments/tests/test_output_claim_boundaries.py"
+      ],
+      "reason": "Audit thirteen supported theorem dependencies, reconcile the proof inventory, and add finite falsification controls for overbroad recovery and output interpretations."
+    },
+    {
+      "base_repository": "https://github.com/sekosai/schemen-gate",
+      "base_commit": "096c62213085f936d325a4991301265e74d0e92d",
+      "paths": [
+        "README.md",
+        "paper/cdp.tex",
+        "paper/cdp.pdf",
+        "paper/split/binary-activation-core.tex",
+        "output/pdf/binary-activation-core.pdf"
+      ],
+      "reason": "Propagate the corrected formal inventory and claim boundaries to the research entry point and rebuild both affected publications; historical experimental measurements are unchanged."
+    }
+  ]
 }

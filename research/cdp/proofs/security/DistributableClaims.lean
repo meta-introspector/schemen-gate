@@ -5,20 +5,28 @@ Authors: Ryan R
 -/
 import DistributedSecurity
 
--- The concrete attack bound below compares powers up to 2^384.
+-- The conditional arithmetic below compares powers up to 2^384.
 set_option exponentiation.threshold 512
 
 /-!
+# Historical Conditional Wrappers — Not Supported Security Guarantees
+
+The recovery bound is now an explicit FullEnumerationAssumption, with no
+instance established here and no reduction from PRF security. Historical
+structure/field names do not establish cryptographic hardness, confident
+wrongness, or concealment. Statistical camouflage assumptions remain excluded
+from the supported claim set. Algebraic results retain their exact hypotheses.
+
 # Distributable Safety Claims — Consolidated
 
 This file consolidates the "distributable safety" wrapper structures
 from V1, V2, and V3 into a single location. These structures package
-core gate security properties (gradient isolation, steganographic failure,
-combinatorial hardness) into a "distributable safety" conclusion.
+local algebra and unvalidated premises under historical structure names.
+They do not establish a supported distributable-safety conclusion.
 
 **Why separated**: Patent E (Distributable Inert Artifact) is deferred
 from initial filing. The core gate theorems (gradient isolation, weight
-confinement, steganographic failure, etc.) remain in their original files
+confinement, mask exclusion, etc.) remain in their original files
 (GateSecurity.lean, ModelSecurity.lean, ModelSecurityV2.lean,
 ModelSecurityV3.lean). This file contains only the distributable-safety
 *framing* — the structures that package those theorems into a
@@ -28,11 +36,11 @@ For the Weight Camouflage proofs (V4), see DistributedSecurity.lean.
 
 ## Contents
 
-- `DistributableSafety` (V1): combinatorial hardness + PRF + steganographic failure
-- `DistributableSafetyV2` (V2): adds steganographic output (valid softmax)
-- `DistributableSafetyV3` (V3): adds weight indistinguishability, regime locality,
-  exact mask uniqueness, compositional confinement
-- Concrete adversary bound (cheap_attempt_cannot_succeed)
+- `DistributableSafety` (V1): removed historical wrapper
+- `DistributableSafetyV2` (V2): adds output validity (valid softmax)
+- `DistributableSafetyV3` (V3): adds conditional reachability, regime locality,
+  a universally quantified mask identity, and pointwise gradient confinement
+- Consequence of an explicitly supplied recovery premise (cheap_attempt_cannot_succeed)
 - End-to-end security chains V1, V2, V3
 -/
 
@@ -52,7 +60,7 @@ noncomputable section
 --
 -- The V2 structure (`DistributableSafetyV2` below) supersedes it.
 -- V2's `no_shortcut` quantifies over `RecoveryAttempt` and constrains
--- the query budget; it is not trivially satisfiable.
+-- the query budget. Its bound must now be supplied as an explicit premise.
 -- ════════════════════════════════════════════════════════════════
 
 
@@ -64,14 +72,10 @@ namespace Schemen.SecurityV2
 
 open Schemen Schemen.Security
 
-/-- Distributable safety with strengthened guarantees (V2).
-
-    Changes from V1:
-    1. `no_shortcut` quantifies over `RecoveryAttempt` and constrains
-       the adversary's query budget. Not trivially satisfiable.
-    2. `steganographic_output` added: wrong mask produces a valid
-       probability distribution, not an error.
-    3. `threat_model` makes assumptions explicit as typed fields. -/
+/-- Historical wrapper combining local algebra with an unvalidated premise.
+    `no_shortcut` is supplied explicitly, not derived from a PRF game.
+    `steganographic_output` states normalization over exact real logits only.
+    The threat-model marker has no fields or computational semantics. -/
 structure DistributableSafetyV2 (n R : ℕ) where
   combinatorial_hardness :
     2 ^ 256 ≤ Nat.choose n (n / R)
@@ -91,11 +95,11 @@ structure DistributableSafetyV2 (n R : ℕ) where
       (∀ k : Fin o, 0 < softmax logits k)
       ∧ (∑ k : Fin o, softmax logits k = 1)
 
-theorem standard_is_distributable_safe_v2 :
+theorem standard_is_distributable_safe_v2
+    (h_enumeration : FullEnumerationAssumption 768 2) :
     DistributableSafetyV2 768 2 where
-  combinatorial_hardness := exceeds_aes256_security
-  no_shortcut := fun S A T h_rec =>
-    prf_brute_force_optimal S A T (by omega) (by omega) ⟨384, by omega⟩ h_rec
+  combinatorial_hardness := standard_support_count_ge_two_pow_256
+  no_shortcut := h_enumeration
   steganographic_mask := fun P r s hrs j hj =>
     wrong_mask_reads_wrong_dims P r s hrs j hj
   steganographic_output := fun o ho h_act W2 b2 mask =>
@@ -106,21 +110,24 @@ def cheap_attempt : RecoveryAttempt 768 2 where
   queries := 2 ^ 40
   queries_pos := by omega
 
-/-- A cheap attempt cannot succeed: it contradicts the combinatorial bound. -/
+/-- Conditional consequence of the supplied unvalidated enumeration premise.
+    This is not a proved real-world recovery bound. -/
 theorem cheap_attempt_cannot_succeed
+    (h_enumeration : FullEnumerationAssumption 768 2)
     (S : CryptoScheme 768 2) (T : ThreatModel 768 2)
     (h_rec : Recovers cheap_attempt S) :
     False := by
   have h1 : 2 ^ 384 ≤ cheap_attempt.queries :=
     le_trans standard_exceeds_2_384
-      (prf_brute_force_optimal S cheap_attempt T (by omega) (by omega) ⟨384, by omega⟩ h_rec)
+      (h_enumeration S cheap_attempt T h_rec)
   have h2 : cheap_attempt.queries = 2 ^ 40 := rfl
   rw [h2] at h1
   exact absurd h1 (not_le.mpr (Nat.pow_lt_pow_right (by omega) (by omega)))
 
-theorem end_to_end_chain_v2 :
+theorem end_to_end_chain_v2
+    (h_enumeration : FullEnumerationAssumption 768 2) :
     DistributableSafetyV2 768 2 :=
-  standard_is_distributable_safe_v2
+  standard_is_distributable_safe_v2 h_enumeration
 
 end Schemen.SecurityV2
 
@@ -133,14 +140,14 @@ namespace Schemen.SecurityV3
 
 open Schemen Schemen.Security Schemen.SecurityV2
 
-/-- Distributable safety — comprehensive (V3).
+/-- Historical V3 wrapper with the explicit enumeration premise.
 
     Adds to V2:
-    • weight_indistinguishable: weights carry zero key information
-      (requires IsSurjective T — per-process, not axiom)
-    • regime_locality: wrong-key output = regime-s sub-model output
-    • exact_mask: only the correct mask reproduces correct output
-    • compositional_confinement: gate works inside any architecture -/
+    • weight_indistinguishable: a reachability statement conditional on
+      IsSurjective T; no posterior or information-theoretic claim
+    • regime_locality: selected-coordinate sum under a fixed projection
+    • exact_mask: equality for every activation and projection forces mask equality
+    • compositional_confinement: pointwise zero for a masked upstream scalar -/
 structure DistributableSafetyV3 (n R : ℕ) where
   combinatorial_hardness :
     2 ^ 256 ≤ Nat.choose n (n / R)
@@ -181,11 +188,11 @@ structure DistributableSafetyV3 (n R : ℕ) where
     ∀ (mask : Vec n) (j : Fin n),
       mask j = 0 → ∀ upstream : ℝ, upstream * mask j = 0
 
-theorem standard_is_distributable_safe_v3 :
+theorem standard_is_distributable_safe_v3
+    (h_enumeration : FullEnumerationAssumption 768 2) :
     DistributableSafetyV3 768 2 where
-  combinatorial_hardness := exceeds_aes256_security
-  no_shortcut := fun S A T h_rec =>
-    prf_brute_force_optimal S A T (by omega) (by omega) ⟨384, by omega⟩ h_rec
+  combinatorial_hardness := standard_support_count_ge_two_pow_256
+  no_shortcut := h_enumeration
   steganographic_mask := fun P r s hrs j hj =>
     wrong_mask_reads_wrong_dims P r s hrs j hj
   steganographic_output := fun o ho h_act W2 b2 mask =>
@@ -199,8 +206,9 @@ theorem standard_is_distributable_safe_v3 :
   compositional_confinement := fun mask j hj upstream => by
     rw [hj, mul_zero]
 
-theorem end_to_end_chain_v3 :
+theorem end_to_end_chain_v3
+    (h_enumeration : FullEnumerationAssumption 768 2) :
     DistributableSafetyV3 768 2 :=
-  standard_is_distributable_safe_v3
+  standard_is_distributable_safe_v3 h_enumeration
 
 end Schemen.SecurityV3

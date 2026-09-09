@@ -8,27 +8,26 @@ Authors: Ryan R
 import ModelSecurityV2
 
 /-!
-# V3 Security Proofs — Weight Indistinguishability, Regime Equivalence,
-# Transformer Compositionality
+# Conditional Reachability, Regime Locality, and Local Confinement
 
-Addresses the four major gaps identified in the meta-audit:
+The statements below retain their exact hypotheses:
 
-1. **Weight Partition Indistinguishability (§1)**: For surjective training processes,
-   the model weights carry zero information about the cryptographic key.
+1. **Conditional Weight Reachability (§1)**: Under the unestablished
+   `IsSurjective T` hypothesis, each key has some training data producing the
+   target weights. No probability or information-theoretic claim follows.
 
-2. **Steganographic Regime Equivalence (§2)**: The wrong-key output is not
-   "broken" — it is the output of a fully functional sub-model for a different
-   regime. The sum over all dimensions collapses to a sum over the regime's
-   partition.
+2. **Regime Output Locality (§2)**: The output sum collapses to the
+   selected coordinates. This proves neither task competence nor confident
+   wrongness. Distinct regimes in one partition and different-key masks
+   are different cases; the latter need not be disjoint.
 
-2B. **Exact Mask Uniqueness (§2B)**: The ONLY mask that universally reproduces
-    regime r's correct output is exactly indicator(groups(r)). Any other mask —
-    subset, superset, partial overlap, or arbitrary — produces different logits
-    whenever the differing dimensions carry nonzero signal.
+2B. **Exact Mask Uniqueness (§2B)**: Equality for every activation and
+    projection forces equality with indicator(groups(r)). A fixed model can
+    produce equal logits under different masks; contributions may cancel.
 
-3. **Transformer / Post-Residual Compositionality (§3)**: The gate confinement
-   proofs hold inside residual blocks because the gate is a multiplicative
-   bottleneck — any upstream gradient multiplied by mask[j]=0 is zero.
+3. **Local Confinement (§3)**: Multiplication by zero removes an upstream
+   real scalar at that coordinate. The residual-block results additionally
+   require the stated placement and support-preservation hypotheses.
 
 ## New hypotheses
 
@@ -43,39 +42,41 @@ would falsify a universal surjectivity axiom).
 
 ```
   V1 (GateSecurity):    a·0=0 chain for gradients/weights
-  V1 (ModelSecurity):   combinatorial bounds, PRF axiom (deprecated)
-  V2 (ModelSecurityV2): strengthened PRF, softmax validity
-  V3 (this file):       weight indistinguishability
-                         + regime equivalence
-                         + compositionality
+  V1 (ModelSecurity):   support-count bounds
+  V2 (ModelSecurityV2): explicit recovery premise, softmax validity
+  V3 (this file):       conditional reachability
+                         + selected-coordinate locality
+                         + local confinement
        │
-       ├── IsSurjective T (hypothesis) → zero_key_information
-       ├── regime_output_locality → steganographic equivalence
+       ├── IsSurjective T → zero_key_information (historical reachability name)
+       ├── regime_output_locality → selected-coordinate sum
        ├── mask_decomposition → wrong_mask_corrupts → access_requires_exact_mask
-       └── gate_confinement_composes → transformer compatibility
+       └── gate_confinement_composes → pointwise masked-gradient equality
 ```
 
 ## Complete axiom inventory (after V3, with V4 scope note and April 2026 cleanup)
 
 | Axiom / Hypothesis | Source | Status |
 |---|---|---|
-| `prf_brute_force_optimal` | V2 | Active — standard cryptographic (PRF) assumption |
+| `FullEnumerationAssumption` | V2 | Unvalidated caller-supplied premise; former global recovery axiom removed |
 | `Recovers` | V2 | Active — structural opaque predicate for adversary success |
-| `IsSurjective T` | V3 | Active but unrealistic for SGD — see `zero_key_information` scope note. Retained for theorem `zero_key_information`, which is correct under its hypothesis but should not be cited in external claims |
+| `IsSurjective T` | V3 | Unestablished process hypothesis; reachability does not imply a key-information or posterior bound |
 | `IsDistributionMatched` | V4.2 (DistributedSecurity) | Active — opaque predicate for weight-camouflage distributional match |
 | `camouflage_indistinguishable` | V4.2 (DistributedSecurity) | Active — conditioned on `IsDistributionMatched` |
 | `gradient_probing_hard` | V4.2 (DistributedSecurity) | Active — conditioned on `IsDistributionMatched` |
 | `prf_implies_no_shortcut` | V1 | **REMOVED** (April 2026) — tautology `C(n,n/R) ≤ C(n,n/R)` |
 | `training_data_private` | V1 | **REMOVED** (April 2026) — was `axiom : True` |
 
-The checked-in graph contains five project-specific `axiom` declarations:
-one substantive PRF assumption, two opaque predicate declarations
+The checked-in graph contains four project-specific `axiom` declarations:
+two opaque predicate declarations
 (`Recovers`, `IsDistributionMatched`), and two historical statistical
 consequences conditioned on `IsDistributionMatched`. The latter two remain
-inspectable but are excluded from the paper's claim set. Two per-process hypotheses
-(`IsSurjective T` retained for historical completeness;
-`PartitionOblivious T` in V4 is the realistic replacement). Everything else
-is machine-checked.
+inspectable but are excluded from the paper's claim set. `IsSurjective T`
+is a per-process reachability hypothesis. V4's `PartitionOblivious T` is a
+True-valued marker with no enforced security predicate, not a replacement
+confidentiality theorem. The recovery wrappers additionally require
+FullEnumerationAssumption; no instance is supplied. Machine checking validates statements under their
+actual hypotheses, not the behavioral interpretation of historical names.
 -/
 
 set_option autoImplicit false
@@ -88,15 +89,11 @@ open Schemen Schemen.Security Schemen.SecurityV2
 
 
 -- ════════════════════════════════════════════════════════════════
--- §1. WEIGHT PARTITION INDISTINGUISHABILITY
+-- §1. CONDITIONAL WEIGHT REACHABILITY
 --
--- "An adversary holding the model weights cannot determine
---  which partition (and therefore which key) was used."
---
--- We introduce a TrainingProcess abstraction and define
--- IsSurjective as a per-process hypothesis: any weight
--- configuration is reachable from any partition given
--- appropriate training data.
+-- IsSurjective is a per-process hypothesis: any weight configuration is
+-- reachable from any partition given suitable data. It does not specify
+-- the probability of those data or an adversary's ability to distinguish keys.
 -- ════════════════════════════════════════════════════════════════
 
 /-- Model weights: the W₁ (input→hidden) and W₂ (hidden→output) matrices.
@@ -110,66 +107,21 @@ structure TrainingProcess (n R m o : ℕ) where
   Data : Type
   train : ValidPartition n R → Data → ModelWeights m n o
 
-/-- HYPOTHESIS (Weight Space Surjectivity).
-
-    A training process T is surjective if, for any target weight
-    configuration W and any valid partition P, there exists training
-    data D such that training with (P, D) produces exactly W.
-
-    This is a PER-PROCESS HYPOTHESIS, not a universal axiom. It must
-    be established for each concrete training process. A trivial
-    training process (e.g., one that always returns zero weights)
-    would NOT satisfy this predicate, and correctly so — weight
-    indistinguishability only holds for training processes with
-    sufficiently rich optimization landscapes.
-
-    Why this is NOT an axiom:
-    A bare `axiom weight_surjectivity (T : TrainingProcess ...)` would
-    universally quantify over ALL training processes, including trivial
-    ones that provably cannot reach all weight configurations. That
-    would introduce an inconsistency (derive 0 = 1 via a constant-zero
-    training process). Making it a hypothesis avoids this: the caller
-    must demonstrate surjectivity for their specific T.
-
-    Justification (for realistic SGD-based training):
-    • Each column j of W₁ is trained exclusively by the regime
-      owning dimension j (by `weight_update_confined`).
-    • Each row j of W₂ likewise (by `w2_update_confined`).
-    • These columns/rows are trained independently of each other.
-    • For sufficiently rich training data and a capable optimizer,
-      any target weight vector for a single column/row is reachable.
-
-    The hypothesis is strictly about REACHABILITY, not about the
-    probability of reaching a particular configuration. It says
-    the set of achievable weights is the entire weight space,
-    not that any particular weight is likely. -/
+/-- A per-process reachability hypothesis: every target weight configuration
+    can be produced from every valid partition using some training data.
+    It is not asserted for any concrete optimizer. A process that always
+    returns zero weights need not satisfy it. No probability distribution
+    over keys or data is supplied, so it has no posterior interpretation. -/
 def IsSurjective {n R m o : ℕ} (T : TrainingProcess n R m o) : Prop :=
   ∀ (W : ModelWeights m n o) (P : ValidPartition n R),
     ∃ D : T.Data, T.train P D = W
 
-/-- **Theorem (Zero Key Information) — ⚠ HYPOTHESIS IS UNREALISTIC FOR SGD.**
-    For a surjective training process T, any observed weight matrix W is
-    consistent with EVERY possible key k.
-
-    Proof: for any key k, `S.derive k` produces a valid partition. By
-    surjectivity of T, there exists training data D such that training with
-    that partition and D produces W. Consequence:
-    `∀ k, ∃ D, train(derive(k), D) = W`. Under surjectivity, the adversary's
-    posterior over keys given weights equals their prior.
-
-    **⚠ Scope / honesty note (added April 2026).** The `IsSurjective T`
-    hypothesis states that any weight configuration is reachable from any
-    partition. This is **false for realistic SGD-based training**: training
-    trajectories form a measure-zero manifold in weight space, so the image
-    of `T.train P D` over all `D` is not the full weight space.
-
-    This theorem is kept here as a correct mathematical result under its
-    stated hypothesis, not as a security claim about deployed systems. **Do
-    not cite `zero_key_information` in marketing, compliance submissions, or
-    patent specifications.** The public cryptographic claim Schemen makes is
-    an informal reduction to the PRF assumption — see
-    `proofs/ModelSecurityV4.lean` for the type-level scaffolding and
-    `docs/executive-summary.md` for the operational statement. -/
+/-- Historical name for conditional reachability, not zero key information.
+    Under IsSurjective T, every key has some data producing W. The witnesses
+    can differ between keys, and their probabilities are unspecified. No
+    instance of the hypothesis is supplied for a concrete training process.
+    Neither this theorem nor V4's unproved reduction scaffolding establishes
+    confidentiality of trained weights. -/
 theorem zero_key_information {n R m o : ℕ}
     (S : CryptoScheme n R) (T : TrainingProcess n R m o)
     (hT : IsSurjective T)
@@ -177,13 +129,9 @@ theorem zero_key_information {n R m o : ℕ}
     ∀ k : S.Key, ∃ D : T.Data, T.train (S.derive k) D = W :=
   fun k => hT W (S.derive k)
 
-/-- **Theorem (Partition Indistinguishability).**
-    For any two keys k₁ and k₂, the observed weights W are
-    consistent with BOTH partitions simultaneously.
-
-    The adversary cannot determine whether k₁ or k₂ was used
-    by examining the weights, because both are equally consistent
-    with the observation. -/
+/-- Historical name for two reachability witnesses under IsSurjective T.
+    Existence for both keys does not imply equal likelihoods or prevent a
+    distinguisher from exploiting the distribution of observed weights. -/
 theorem partition_indistinguishable {n R m o : ℕ}
     (S : CryptoScheme n R) (T : TrainingProcess n R m o)
     (hT : IsSurjective T)
@@ -194,15 +142,11 @@ theorem partition_indistinguishable {n R m o : ℕ}
 
 
 -- ════════════════════════════════════════════════════════════════
--- §2. STEGANOGRAPHIC REGIME EQUIVALENCE
+-- §2. REGIME OUTPUT LOCALITY
 --
--- "The wrong-key output is not broken — it is the output of
---  regime s's sub-model, a fully functional model for a
---  different task."
---
--- We prove that the output with mask M_s depends ONLY on
--- the dimensions in groups(s). The full sum over Fin n
--- collapses to a sum over groups(s).
+-- For a fixed projection and bias, the masked hidden-vector sum collapses
+-- to the selected coordinates. This says nothing about task competence,
+-- output confidence, or correctness.
 -- ════════════════════════════════════════════════════════════════
 
 /-- Helper: summing f(j) · indicator(S)(j) over all j equals
@@ -229,15 +173,8 @@ lemma sum_mul_indicator_eq {n : ℕ} (S : Finset (Fin n)) (f : Fin n → ℝ) :
     collapses to a sum over just the |groups(s)| = n/R
     dimensions in the regime's partition.
 
-    This means the adversary with mask M_s is running regime s's
-    sub-model — a fully functional, correctly trained model for
-    regime s's data. The output is not "broken" or "random";
-    it is a legitimate model giving real answers for a different
-    task.
-
-    Combined with V2's `wrong_key_valid_distribution`: the output
-    is a valid probability distribution (positive, sums to 1)
-    that reflects regime s's learned knowledge. -/
+    The projection and bias remain fixed. There is no theorem about
+    learned task competence, confidence, or statistical concealment. -/
 theorem regime_output_locality {n o R : ℕ}
     (P : ValidPartition n R) (s : Fin R)
     (h_act : Vec n) (W2 : Fin n → Fin o → ℝ) (b2 : Fin o → ℝ) :
@@ -261,9 +198,9 @@ theorem regime_output_locality {n o R : ℕ}
     or zeroing the other dimensions has no effect on the output
     when mask M_s is applied.
 
-    Together with `regime_output_locality`, this proves the
-    steganographic equivalence: the wrong-key model IS regime s's
-    sub-model, reading exclusively from regime s's learned features. -/
+    The projection, bias, and active hidden values are fixed. This does
+    not prove that an arbitrary upstream network preserves those values
+    when an input changes. -/
 theorem regime_output_independent_of_others {n o R : ℕ}
     (P : ValidPartition n R) (s : Fin R)
     (h_act₁ h_act₂ : Vec n)
@@ -302,9 +239,8 @@ theorem regime_output_independent_of_others {n o R : ℕ}
 -- nonzero signal. This captures all cases — superset, subset,
 -- partial overlap, arbitrary construction — in a single result.
 --
--- Together with weight confinement (groups(r) holds the knowledge)
--- and the PRF axiom (constructing the mask requires the key),
--- this completes the formal proof of the key claim.
+-- These are functional identities. They do not prove key recovery is
+-- necessary or hard, nor that every fixed model distinguishes every mask.
 -- ════════════════════════════════════════════════════════════════
 
 /-- **Theorem (General Mask Decomposition).**
@@ -378,12 +314,9 @@ theorem wrong_mask_corrupts {n o : ℕ}
     The output logits reduce to M j₀ vs indicator(S) j₀, which
     differ by assumption. Contradiction.
 
-    This is the formal proof of "you don't get access to regimes
-    you don't have keys to." Combined with:
-    • Weight confinement: regime r's knowledge lives in groups(r)
-    • PRF axiom: constructing groups(r) requires the key
-    The chain is: no key → can't identify groups(r) → can't
-    construct indicator(groups(r)) → can't reproduce the output. -/
+    The hypothesis quantifies over ALL activations and output projections.
+    A particular fixed model can give equal outputs under different masks.
+    No key-recovery or authorization consequence is proved here. -/
 theorem access_requires_exact_mask {n R : ℕ}
     (P : ValidPartition n R) (r : Fin R)
     (M : Vec n)

@@ -60,7 +60,7 @@ is pointwise identical for any choice of inactive-regime adapters.
   "the adversary cannot even distinguish the deployed model from
   a model with their adapter wiped" statement.
 
-### Steganographic failure, generation analogue (§ 6 below)
+### Independence from inactive adapters (§ 6 below)
 - `generation_steganographic_failure`: if two adapter families
   agree on the masked regime set `A`, the generation output under
   mask `A` is identical. Structural / algebraic counterpart to the
@@ -472,12 +472,12 @@ theorem generation_invariant_under_inactive_replacement
   intro R hR
   simp [hR]
 
-/-- **Theorem (Generation Steganographic Failure — Structural).**
+/-- **Theorem (Generation Independence — Historical Compatibility Name).**
     (Handoff §4, structural / algebraic counterpart.)
 
     Fix a masked regime set `A`. If two adapter families `fam`
     and `fam'` agree on `A`, the autoregressive generation output
-    under mask `A` is bit-identical for any prompt and any number
+    under mask `A` is equal in the modeled construction for any prompt and any number
     of steps.
 
     Interpretation: if the backbone was pretrained without access
@@ -489,6 +489,9 @@ theorem generation_invariant_under_inactive_replacement
     of this function references `D_B` for any `B ∉ A`. Hence
     (structurally/algebraically) the output reveals nothing about
     any other regime's training corpus.
+
+    This is equality under fixed modeled functions and active state, not
+    proof of bit identity for arbitrary GPU/serving implementations.
 
     This is the generation analogue of V3's `regime_output_locality`
     at the forward-pass level, extended through the LM head and

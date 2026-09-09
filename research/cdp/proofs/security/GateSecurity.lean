@@ -363,16 +363,9 @@ theorem partition_isolates {n R : ℕ} (P : ValidPartition n R)
 -- zero from every dimension that was active during training.
 -- ════════════════════════════════════════════════════════════
 
-/-- **Theorem (Wrong Mask Reads Wrong Dimensions).**
-    If a model was trained with regime r's mask, an adversary
-    applying regime s's mask (s ≠ r) gets zero at every
-    dimension that regime r activated. The adversary's forward
-    pass reads exclusively from dimensions where regime r
-    deposited *no* knowledge.
-
-    This is the algebraic basis for steganographic failure:
-    the output is a valid softmax distribution over the wrong
-    partition, producing confident but incorrect answers. -/
+/-- Distinct regimes of one valid partition are disjoint. This is a
+    support statement, not a claim about task accuracy or confidence.
+    Masks from independently derived keys are not assumed disjoint. -/
 theorem wrong_mask_reads_wrong_dims {n R : ℕ} (P : ValidPartition n R)
     (r s : Fin R) (hrs : r ≠ s) (j : Fin n) (hj : j ∈ P.groups r) :
     indicator (P.groups s) j = 0 :=

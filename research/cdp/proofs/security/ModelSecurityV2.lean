@@ -9,37 +9,18 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import ModelSecurity
 
 /-!
-# Hardened Security Claims — V2
+# Output Validity and Historical Recovery Assumptions — V2
 
-Strengthened formalization addressing gaps identified in V1 audit.
+The softmax results establish a valid distribution over exact real logits.
+They establish no answer correctness, confidence, calibration, or statistical
+indistinguishability. The runtime floating-point behavior is a separate contract.
 
-## Changes from V1
-
-1. **PRF axiom (H1)**: V1's axiom had type `C(n,n/R) ≤ C(n,n/R)` —
-   trivially `le_refl`. V2 introduces `RecoveryAttempt` where the
-   adversary declares a query budget and an opaque `Recovers`
-   predicate. The axiom is CONDITIONAL: IF the adversary succeeds,
-   THEN their budget must be ≥ C(n,n/R). This is consistent (you
-   can construct cheap attempts, but can't prove they succeed) and
-   non-trivial (successful recovery requires exhaustive search).
-
-2. **Steganographic failure (H5)**: V1 proved the wrong mask reads
-   wrong dimensions (algebraic). V2 additionally defines `softmax`
-   using `Real.exp` from Mathlib and proves the output is a valid
-   probability distribution (positive, sums to 1) — formalizing
-   "confident wrong answers, not errors."
-
-3. **DistributableSafetyV2 (H7)**: The `no_shortcut` field now
-   says: `∀ A, Recovers A S → C(n,n/R) ≤ A.queries`.
-
-4. **Training data assumption (H2)**: V1 had `axiom : True`. V2
-   models the adversary's capabilities as a typed structure and
-   makes the assumption a field rather than a bare axiom.
-
-## V1 proofs are NOT modified
-
-All V1 theorems in GateSecurity.lean and ModelSecurity.lean remain
-as-is. V2 imports and builds on V1.
+The former global `prf_brute_force_optimal` axiom has been removed. Its bound
+is retained as an explicit `FullEnumerationAssumption` supplied by callers of
+historical wrapper theorems. It is not a consequence of ordinary PRF security
+and no instance is established here. A recovery game would need key sampling,
+adversary observations (including trained weights), costs, and success
+probability. An opaque success predicate does not supply that game.
 -/
 
 set_option autoImplicit false
@@ -55,15 +36,7 @@ open Schemen Schemen.Security
 -- §1. STRENGTHENED ADVERSARY MODEL  (fixes H1, H2, H7)
 -- ════════════════════════════════════════════════════════════════
 
-/-- A partition recovery attempt.
-
-    The adversary declares how many candidate partitions they can
-    test before identifying the correct one. Under the PRF
-    assumption, this budget must be at least C(n, n/R).
-
-    This replaces V1's vacuous axiom (which had type `x ≤ x`).
-    Now the axiom constrains an externally-provided natural number,
-    making it non-trivially satisfiable. -/
+/-- A positive candidate budget, not a computational adversary model. -/
 structure RecoveryAttempt (n R : ℕ) where
   /-- Number of candidate partitions the adversary evaluates -/
   queries : ℕ
@@ -88,54 +61,35 @@ structure RecoveryAttempt (n R : ℕ) where
 structure ThreatModel (n R : ℕ) : Type where
   -- empty: all fields were vacuous and were removed.
 
-/-- Opaque predicate: the adversary's recovery attempt succeeds
-    against a given cryptographic scheme — i.e., the adversary
-    correctly identifies the partition from model weights alone.
-
-    This is axiomatized (not defined) because formalizing "the
-    adversary's strategy outputs the correct partition" requires
-    a computational model we don't have in Lean. The opacity is
-    the point: you cannot construct a proof of `Recovers A S`
-    for a cheap attempt, which keeps the system consistent. -/
+/-- Historical opaque recovery predicate. It has no executable strategy,
+    sampled key, observation transcript, or success probability. Inability
+    to prove this predicate is not evidence that a real attack fails. -/
 axiom Recovers {n R : ℕ} : RecoveryAttempt n R → CryptoScheme n R → Prop
 
-/-- AXIOM (PRF Brute-Force Optimality — Strengthened).
+/-- Unvalidated historical recovery premise, not a standard PRF assumption.
+    A successful guess need not enumerate the space. This proposition has
+    no supplied instance and is excluded from supported security claims. -/
+def FullEnumerationAssumption (n R : ℕ) : Prop :=
+  ∀ (S : CryptoScheme n R) (A : RecoveryAttempt n R) (_T : ThreatModel n R),
+    Recovers A S → Nat.choose n (n / R) ≤ A.queries
 
-    IF an adversary successfully recovers the correct partition,
-    THEN their query budget must be at least C(n, n/R).
-
-    Why this is consistent (unlike the unconditioned version):
-    • You CAN construct a RecoveryAttempt with queries = 1
-    • But you CANNOT prove `Recovers` for it (opaque axiom)
-    • So you cannot invoke this axiom for cheap attempts
-    • No inconsistency: cheap attempts exist, they just can't
-      be proven successful
-
-    Cryptographic basis:
-    • HMAC-SHA256 is a PRF (FIPS 198-1, Bellare-Canetti-Krawczyk 1996)
-    • PRF-seeded Fisher-Yates produces a pseudorandom permutation
-    • Under PRF assumption, the partition is computationally
-      indistinguishable from a truly random partition
-    • For a truly random partition, all C(n, n/R) candidates are
-      equally likely, making brute force optimal
-
-    This axiom holds for ANY PRF family, not just HMAC-SHA256. -/
-axiom prf_brute_force_optimal {n R : ℕ}
+/-- Historical compatibility name. The recovery bound now requires an
+    explicit unvalidated premise; it is no longer a global axiom. -/
+theorem prf_brute_force_optimal {n R : ℕ}
+    (h_enumeration : FullEnumerationAssumption n R)
     (S : CryptoScheme n R) (A : RecoveryAttempt n R)
-    (_T : ThreatModel n R)
-    (hn : 0 < n) (hR : 0 < R) (hdiv : R ∣ n)
+    (T : ThreatModel n R)
+    (_hn : 0 < n) (_hR : 0 < R) (_hdiv : R ∣ n)
     (h_success : Recovers A S) :
-    Nat.choose n (n / R) ≤ A.queries
+    Nat.choose n (n / R) ≤ A.queries :=
+  h_enumeration S A T h_success
 
 
 -- ════════════════════════════════════════════════════════════════
 -- §2. SOFTMAX — CONCRETE DEFINITION AND PROPERTIES  (fixes H5)
 --
--- V1 proved: wrong mask reads zero at training-active dimensions.
--- V2 additionally proves: the OUTPUT is a valid probability
--- distribution (positive, sums to 1). This formalizes the patent
--- claim that wrong keys produce "confident wrong answers, not
--- errors or access denials."
+-- This section proves output validity for exact real logits. It makes no
+-- behavioral or authorization claim and does not model IEEE arithmetic.
 -- ════════════════════════════════════════════════════════════════
 
 /-- Softmax denominator: Z(v) = Σ exp(v_k). Always positive because
@@ -165,8 +119,8 @@ theorem softmax_denom_ne_zero {n : ℕ} (hn : 0 < n) (v : Fin n → ℝ) :
 
 /-- **Theorem.** Every softmax output is strictly positive.
 
-    This means the output is never zero, never negative, and never
-    NaN. The adversary always receives a "real" answer. -/
+    This is exact real arithmetic, whose domain contains no NaN. It does
+    not prove that a floating-point implementation avoids underflow. -/
 theorem softmax_pos {n : ℕ} (hn : 0 < n) (v : Fin n → ℝ) (j : Fin n) :
     0 < softmax v j :=
   div_pos (Real.exp_pos _) (softmax_denom_pos hn v)
@@ -194,12 +148,7 @@ theorem softmax_le_one {n : ℕ} (hn : 0 < n) (v : Fin n → ℝ) (j : Fin n) :
 
 
 -- ════════════════════════════════════════════════════════════════
--- §3. STEGANOGRAPHIC OUTPUT — WRONG KEY, VALID DISTRIBUTION
---
--- Combining GateSecurity's wrong_mask_reads_wrong_dims with
--- the softmax properties above to formalize the full claim:
--- wrong mask → valid probability distribution → "confident
--- wrong answers."
+-- §3. GATED OUTPUT VALIDITY
 -- ════════════════════════════════════════════════════════════════
 
 /-- Output logits of the gated MLP: logits_k = Σ_j gated_j · W2_{j,k} + b2_k.
@@ -208,23 +157,10 @@ def output_logits {n o : ℕ} (gated : Fin n → ℝ) (W2 : Fin n → Fin o → 
     (b2 : Fin o → ℝ) : Fin o → ℝ :=
   fun k => (∑ j : Fin n, gated j * W2 j k) + b2 k
 
-/-- **Theorem (Steganographic Output Is Valid Distribution).**
-
-    When ANY mask is applied (correct or incorrect), the output
-    of softmax is ALWAYS a valid probability distribution:
-    all components strictly positive and summing to exactly 1.
-
-    This means:
-    • Wrong key → confidently wrong answers (valid softmax)
-    • No error signal, no null output, no access denied
-    • The adversary cannot distinguish "wrong key" from
-      "model was trained to answer differently"
-
-    This theorem composes with `wrong_mask_reads_wrong_dims`
-    (GateSecurity §7): the wrong mask zeroes the training-active
-    dimensions, and the resulting logits pass through softmax
-    to produce a valid but incorrect distribution. -/
-theorem wrong_key_valid_distribution {n o : ℕ} (_hn : 0 < n) (ho : 0 < o)
+/-- For nonempty output and any real-valued mask, softmax yields positive
+    probabilities summing to one. There is no authorization, correctness,
+    confidence, calibration, or indistinguishability conclusion. -/
+theorem gated_output_valid_distribution {n o : ℕ} (_hn : 0 < n) (ho : 0 < o)
     (h_act : Vec n) (W2 : Fin n → Fin o → ℝ) (b2 : Fin o → ℝ)
     (mask : Vec n) :
     let logits := output_logits (h_act ⊙ mask) W2 b2
@@ -234,6 +170,17 @@ theorem wrong_key_valid_distribution {n o : ℕ} (_hn : 0 < n) (ho : 0 < o)
   ⟨fun k => softmax_pos ho _ k,
    softmax_sum_one ho _,
    fun k => softmax_le_one ho _ k⟩
+
+/-- Compatibility alias for output validity only. A different key is not
+    assumed disjoint, and output validity does not imply wrong answers. -/
+theorem wrong_key_valid_distribution {n o : ℕ} (hn : 0 < n) (ho : 0 < o)
+    (h_act : Vec n) (W2 : Fin n → Fin o → ℝ) (b2 : Fin o → ℝ)
+    (mask : Vec n) :
+    let logits := output_logits (h_act ⊙ mask) W2 b2
+    (∀ k : Fin o, 0 < softmax logits k)
+    ∧ (∑ k : Fin o, softmax logits k = 1)
+    ∧ (∀ k : Fin o, softmax logits k ≤ 1) :=
+  gated_output_valid_distribution hn ho h_act W2 b2 mask
 
 
 -- ════════════════════════════════════════════════════════════════

@@ -12,78 +12,18 @@ import Mathlib.Data.Nat.Choose.Sum
 set_option exponentiation.threshold 512
 
 /-!
-# Model-at-Rest Security — Formal Verification
+# Partition Cardinality and Local Confinement
 
-Machine-checked proofs that an adversary holding the model weights
-but not the cryptographic key faces a computationally infeasible
-partition recovery problem.
+The results prove binomial cardinality bounds and modeled coordinate/update
+properties. They do not prove recovery cost, key entropy, confidentiality of
+trained weights, or an AES-comparable security level.
 
-## Design Principle: Lemma the Cryptography
-
-The cryptographic primitives (HMAC-SHA256, HKDF, AES-256-GCM, etc.)
-are axiomatized as abstract interfaces. The patent's security claims
-hold for ANY suitable instantiation — the specific choice of algorithm
-is an implementation detail, not a structural requirement.
-
-This ensures that:
-1. Improvements to underlying primitives strengthen (not invalidate)
-   the patent claims.
-2. Alternative instantiations (HMAC-SHA3, CMAC-AES, etc.) inherit
-   the same security guarantees.
-3. The formal proofs focus on the NOVEL contribution: the architecture
-   from key → partition → mask → gradient isolation → distributable
-   safety.
-
-## Axioms (Lemmas from Cryptography)
-
-Two axioms are taken from established cryptographic literature:
-
-- **PRF Assumption**: The key-to-partition derivation uses a
-  pseudorandom function family. HMAC-SHA256 satisfies this
-  (RFC 2104, FIPS 198-1, Bellare 2006). Any PRF suffices.
-
-- **Training Data Privacy**: The adversary does not possess
-  regime-specific training data. This is the operational
-  premise — the gate exists precisely to protect this data.
-
-## What is Proven (Pure Mathematics + Architecture)
-
-- Central binomial coefficient: C(2k, k) ≥ 2^k              [§B]
-- Partition search space: C(N, N/R) ≥ 2^(N/R)               [§B]
-- Concrete: C(768, 384) ≥ 2^384 > 2^256 (AES-256 level)    [§E]
-- Physical infeasibility: search space > all feasible compute [§F]
-- Weight opacity: extraction requires partition recovery      [§G]
-- Distributable safety: model is inert without key            [§H]
-- End-to-end chain: every link proven or reduced to axiom     [§I]
-
-## Proof Architecture
-
-```
-  AXIOM: PRF (any suitable family)
-    │
-    ▼
-  Key ──derive──▶ Partition ─────▶ Binary Mask
-                   │  PROVEN:        │  PROVEN:
-                   │  disjoint       │  binary
-                   │  exhaustive     │  orthogonal
-                   │  unique         │  composable
-                   │                 │
-                   │                 ▼
-                   │            Gradient Isolation ◄── PROVEN (unconditional)
-                   │                 │
-                   │                 ▼
-                   │            Weight Confinement ◄── PROVEN (W₁ cols + W₂ rows)
-                   │                 │
-                   │                 ▼
-                   │            Knowledge Isolation ◄── PROVEN (per-step)
-                   │                 │
-                   ▼                 ▼
-              Search Space      Steganographic Failure ◄── PROVEN
-              ≥ 2^(N/R)              │
-                   │                 │
-                   ▼                 ▼
-            DISTRIBUTABLE SAFETY ◄── PROVEN (§H)
-```
+`search_space` counts all supports of the declared size. Python derives masks
+from exactly 32 key bytes; deterministic expansion does not add key entropy.
+The historical wrapper theorems now require an explicit, unvalidated
+`FullEnumerationAssumption`. No PRF reduction establishes that premise here.
+Historical names referring to security, extraction, or physical infeasibility
+are compatibility names for narrower arithmetic/algebraic statements.
 -/
 
 set_option autoImplicit false
@@ -94,29 +34,12 @@ open Schemen
 
 
 -- ════════════════════════════════════════════════════════════════
--- §A. CRYPTOGRAPHIC PRIMITIVES — AXIOMATIZED
---
--- The patent claims a SPECIFIC instantiation (HMAC-SHA256,
--- Fisher-Yates, rejection sampling, HKDF). But the security
--- proof works for ANY instantiation satisfying two properties:
--- determinism and pseudorandomness.
---
--- By axiomatizing rather than encoding HMAC-SHA256 directly,
--- we prove the stronger claim: the architecture is secure
--- regardless of which PRF family is used.
+-- §A. ABSTRACT PARTITION DERIVATION
 -- ════════════════════════════════════════════════════════════════
 
-/-- Abstract partition derivation scheme.
-    Encompasses the full crypto chain:
-      key material → PRF → permutation → partition → mask
-    
-    The patent's specific instantiation uses:
-    • HMAC-SHA256 as the PRF (RFC 2104)
-    • Fisher-Yates with rejection sampling as the shuffle
-    • HKDF-Expand for key hierarchy (RFC 5869)
-    
-    The security proofs hold for ANY instantiation
-    where `derive` is deterministic and pseudorandom. -/
+/-- A deterministic function into valid partitions. This structure contains
+    no PRF game or key distribution. `key_space_bits` is metadata, not a
+    proved cardinality of `Key`. -/
 structure CryptoScheme (n R : ℕ) where
   Key : Type
   derive : Key → ValidPartition n R
@@ -143,10 +66,8 @@ theorem derivation_deterministic {n R : ℕ}
 -- i.e. `le_refl`. It was a tautology and constrained nothing. It
 -- was removed in the April 2026 adversarial review.
 --
--- The substantive PRF assumption is in ModelSecurityV2.lean under the
--- name `prf_brute_force_optimal`, which conditions on an opaque
--- `Recovers` predicate and a query-budget structure. That axiom is
--- genuinely non-trivial and is the one cited in all post-V2 claims.
+-- V2's global recovery axiom has also been removed. Historical consumers
+-- must supply FullEnumerationAssumption; no PRF reduction is provided.
 
 -- AXIOM (REMOVED) — training_data_private.
 --
@@ -159,10 +80,10 @@ theorem derivation_deterministic {n R : ℕ}
 
 
 -- ════════════════════════════════════════════════════════════════
--- §B. COMBINATORIAL SECURITY FLOOR  (Patent §5a, Facet 7)
+-- §B. SUPPORT-SPACE CARDINALITY
 --
 -- "For N=768, R=2: the combinatorial search space is
---  C(768, 384) ≈ 10^230, equivalent to ~766 bits of entropy."
+--  C(768, 384) ≈ 10^230, log2 cardinality about 762.881; not key entropy."
 --
 -- We prove the exponential lower bound C(2k, k) ≥ 2^k from
 -- first principles using induction and Pascal's rule.
@@ -184,9 +105,8 @@ theorem choose_mono_n (n k : ℕ) :
 /-- **Theorem (Central Binomial Lower Bound). [Facet 7]**
     C(2k, k) ≥ 2^k for all k ≥ 0.
 
-    This is the cornerstone of the patent's quantitative
-    security claim. The partition search space grows at least
-    exponentially with the hidden dimension.
+    The nominal support count grows exponentially with hidden dimension.
+    A lower bound on attack cost does not follow.
 
     Proof by induction:
       Base: C(0, 0) = 1 ≥ 1 = 2⁰. ✓
@@ -243,29 +163,11 @@ theorem central_binom_tight (k : ℕ) :
 
 
 -- ════════════════════════════════════════════════════════════════
--- §C. ADVERSARY MODEL — WHAT THE ADVERSARY KNOWS
---
--- "The model file becomes a distributable, inert artifact."
---                                              — Patent §4m
---
--- We formalize exactly what the adversary possesses,
--- what they must accomplish, and the search space they face.
+-- §C. SUPPORT-COUNT PARAMETERS
 -- ════════════════════════════════════════════════════════════════
 
-/-- The adversary's knowledge when holding a model at rest.
-
-    KNOWN to the adversary:
-    • Full model weights (W₁, W₂, b₁, b₂) — it's a standard ONNX file
-    • Architecture: gated MLP with element-wise binary masking
-    • Hidden dimension N and regime count R
-    • The derivation algorithm (public, per Kerckhoffs' principle)
-    • These proof files (public knowledge assumption)
-
-    NOT KNOWN to the adversary:
-    • The 256-bit master key K
-    • Any gate mask M_r
-    • Training data for any specific regime
-    • The lockbox or any tenant keys -/
+/-- Historical name for dimension/regime parameters. It encodes neither
+    adversary observations nor secrecy of the weights, data, or key. -/
 structure AdversaryKnowledge where
   n_dims : ℕ
   n_regimes : ℕ
@@ -273,12 +175,9 @@ structure AdversaryKnowledge where
   hr : 2 ≤ n_regimes
   hdiv : n_regimes ∣ n_dims
 
-/-- The partition search space: the number of candidate
-    partitions the adversary must search.
-
-    For a binary split (R=2), this is C(N, N/2).
-    For R groups, this is C(N, N/R) — a lower bound on the
-    full multinomial count N! / ((N/R)!)^R. -/
+/-- Candidate supports for one regime, not a concrete key derivation's
+    image size or an attack-cost bound. For R groups this is a lower bound
+    on the full labeled-partition count. -/
 def search_space (A : AdversaryKnowledge) : ℕ :=
   Nat.choose A.n_dims (A.n_dims / A.n_regimes)
 
@@ -329,7 +228,7 @@ theorem general_exponential_search (A : AdversaryKnowledge) :
 
 
 -- ════════════════════════════════════════════════════════════════
--- §E. CONCRETE SECURITY — STANDARD DEPLOYMENT (N=768, R=2)
+-- §E. CONCRETE CARDINALITY (N=768, R=2)
 -- ════════════════════════════════════════════════════════════════
 
 /-- Standard deployment parameters: 768-dim hidden layer, 2 regimes. -/
@@ -340,12 +239,7 @@ def standard : AdversaryKnowledge where
   hr := by omega
   hdiv := ⟨384, by omega⟩
 
-/-- **Theorem.** C(768, 384) ≥ 2^384.
-
-    For context: 2^384 ≈ 3.94 × 10^115.
-    The actual value C(768, 384) ≈ 10^230 ≈ 2^766 is
-    astronomically larger, but 2^384 already establishes
-    security beyond any feasible computation. -/
+/-- C(768,384) is at least 2^384. This is a support-count bound only. -/
 theorem standard_exceeds_2_384 :
     2 ^ 384 ≤ search_space standard := by
   show 2 ^ 384 ≤ Nat.choose 768 (768 / 2)
@@ -353,37 +247,40 @@ theorem standard_exceeds_2_384 :
   rw [this, show (768 : ℕ) = 2 * 384 from by omega]
   exact central_binom_lower 384
 
-/-- **Theorem.** The search space exceeds AES-256 brute-force
-    resistance (2^256), by a factor of at least 2^128.
-
-    AES-256 is the gold standard for symmetric encryption and
-    is considered secure against all known attacks. The Schemen
-    partition space is exponentially larger. -/
-theorem exceeds_aes256_security :
+/-- The nominal support count is at least 2^256; no attack-work claim. -/
+theorem standard_support_count_ge_two_pow_256 :
     2 ^ 256 ≤ search_space standard :=
   le_trans (Nat.pow_le_pow_right (by omega : 1 ≤ 2) (by omega : 256 ≤ 384))
     standard_exceeds_2_384
 
-/-- **Theorem.** The margin over AES-256 is at least 2^128.
-    This is not a marginal improvement — it is 2^128 ≈ 3.4 × 10^38
-    times larger than the accepted security threshold. -/
-theorem margin_over_aes256 :
+/-- Arithmetic factorization of the 2^384 support-count lower bound. -/
+theorem standard_support_count_ge_two_pow_256_mul_two_pow_128 :
     2 ^ 256 * 2 ^ 128 ≤ search_space standard := by
   rw [← pow_add]
   exact standard_exceeds_2_384
 
-/-- **Theorem.** The key space (2^256) is the security bottleneck,
-    not the partition space. The partition adds no weakness. -/
+/-- Historical compatibility name for a cardinality inequality only. -/
+theorem exceeds_aes256_security :
+    2 ^ 256 ≤ search_space standard :=
+  standard_support_count_ge_two_pow_256
+
+/-- Historical compatibility name; no margin in cryptographic strength. -/
+theorem margin_over_aes256 :
+    2 ^ 256 * 2 ^ 128 ≤ search_space standard :=
+  standard_support_count_ge_two_pow_256_mul_two_pow_128
+
+/-- Historical compatibility name. This inequality proves neither key
+    entropy nor a recovery-work lower bound. -/
 theorem key_is_bottleneck :
     2 ^ 256 ≤ search_space standard :=
-  exceeds_aes256_security
+  standard_support_count_ge_two_pow_256
 
 
 -- ════════════════════════════════════════════════════════════════
--- §F. PHYSICAL INFEASIBILITY
+-- §F. ARITHMETIC COMPARISONS WITH HISTORICAL BUDGET CONSTANTS
 --
--- The search space is not merely "large" — it exceeds
--- fundamental physical limits on computation.
+-- These inequalities compare declared integers. They do not prove
+-- that an attacker must perform that many operations.
 -- ════════════════════════════════════════════════════════════════
 
 /-- Atoms in the observable universe: ≈ 10^80 ≈ 2^266. -/
@@ -426,30 +323,16 @@ theorem universal_machine_infeasible :
   rw [← pow_add, ← pow_add]
   exact Nat.pow_le_pow_right (by omega : 1 ≤ 2) (by omega)
 
-/-- **Theorem (Landauer Bound).**
-    The Landauer limit establishes a minimum energy per bit
-    erasure: kT·ln(2) ≈ 2.85 × 10^-21 joules at room temp.
-
-    Total energy in the observable universe: ≈ 4 × 10^69 joules.
-    Maximum bit operations: 4×10^69 / 2.85×10^-21 ≈ 1.4×10^90 ≈ 2^299.
-
-    Even converting ALL ENERGY IN THE UNIVERSE into computation
-    cannot enumerate 2^384 candidates. The partition is protected
-    by the laws of thermodynamics. -/
+/-- Historical name for 2^299 < 2^384; no thermodynamic security claim. -/
 theorem landauer_bound_infeasible :
     2 ^ 299 < 2 ^ 384 :=
   Nat.pow_lt_pow_right (by omega : 1 < 2) (by omega)
 
 
 -- ════════════════════════════════════════════════════════════════
--- §G. WEIGHT OPACITY
---
--- The adversary holds the model weights. We prove structural
--- prerequisites: column/row confinement means knowledge extraction
--- requires identifying the correct partition.
--- The full reduction to brute force is in ModelSecurityV2.lean
--- via the PRF axiom (prf_brute_force_optimal).
+-- §G. LOCAL UPDATE AND MASK EXCLUSION
 -- ════════════════════════════════════════════════════════════════
+-- Coordinate identities do not establish opacity of trained weights.
 
 /-- **Theorem (Column-Regime Confinement).**
     From gradient isolation (GateSecurity.lean §1-§2):
@@ -460,8 +343,7 @@ theorem landauer_bound_infeasible :
     if j ∉ groups(r), then d_W1[i,j] = 0 for all i.
     So column j accumulates updates only from regime assign(j).
 
-    The adversary therefore knows that each column "belongs to"
-    exactly one regime. But they do not know WHICH one. -/
+    Whether an adversary can identify this ownership is not proved here. -/
 theorem columns_are_regime_confined {n R : ℕ}
     (P : ValidPartition n R) (r : Fin R) (j : Fin n)
     (hj : j ∉ P.groups r) (d_gated relu_grad : Vec n) :
@@ -482,23 +364,10 @@ theorem w2_rows_are_regime_confined {n R : ℕ}
       outer (h ⊙ indicator (P.groups r)) d_logits j k = 0 :=
   fun _ d_logits k => w2_update_confined h _ d_logits j (indicator_not_mem _ j hj) k
 
-/-- **Theorem (Weight Extraction Requires Partition Recovery).**
-    For an adversary targeting regime r's knowledge:
-
-    (a) Every column j ∈ groups(r) was trained exclusively by
-        regime r — all other regimes contribute zero W₁ updates
-        to column j during training (by `columns_are_regime_confined`).
-    (b) Row j of W₂ was trained exclusively by regime r — all
-        other regimes contribute zero W₂ updates to row j
-        (by `w2_rows_are_regime_confined`).
-    (c) The adversary's mask for any other regime s reads zero
-        at j (by `wrong_mask_reads_wrong_dims`).
-
-    Together: extracting regime r's knowledge requires identifying
-    exactly which columns/rows belong to groups(r) — the partition
-    recovery problem. Under the PRF axiom, this requires
-    ≥ C(n, n/R) queries (see ModelSecurityV2.prf_brute_force_optimal). -/
-theorem weight_extraction_requires_partition {n R : ℕ}
+/-- Distinct regimes of one valid partition have zero modeled updates
+    and mask support on each other's coordinates. No extraction/recovery
+    claim follows; different-key masks are not assumed disjoint. -/
+theorem cross_regime_updates_and_mask_zero {n R : ℕ}
     (P : ValidPartition n R) (r s : Fin R) (hrs : r ≠ s)
     (d_gated relu_grad : Vec n) (h : Vec n) :
     ∀ j : Fin n, j ∈ P.groups r →
@@ -514,18 +383,19 @@ theorem weight_extraction_requires_partition {n R : ℕ}
          w2_rows_are_regime_confined P s j h_not_s h,
          wrong_mask_reads_wrong_dims P r s hrs j hj⟩
 
-/-- **Lemma (Search Space Identity).**
-    The search space is C(N, N/R) by definition.
+/-- Historical compatibility alias for local update/mask exclusion only. -/
+theorem weight_extraction_requires_partition {n R : ℕ}
+    (P : ValidPartition n R) (r s : Fin R) (hrs : r ≠ s)
+    (d_gated relu_grad : Vec n) (h : Vec n) :
+    ∀ j : Fin n, j ∈ P.groups r →
+      (∀ (m' : ℕ) (x : Vec m') (i : Fin m'),
+        outer x ((d_gated ⊙ indicator (P.groups s)) ⊙ relu_grad) i j = 0)
+      ∧ (∀ (o : ℕ) (d_logits : Vec o) (k : Fin o),
+        outer (h ⊙ indicator (P.groups s)) d_logits j k = 0)
+      ∧ indicator (P.groups s) j = 0 :=
+  cross_regime_updates_and_mask_zero P r s hrs d_gated relu_grad h
 
-    NOTE: This is a definitional unfolding, not a security proof.
-    The substantive claim — that weight inspection does NOT reduce
-    this search space — follows from the structural chain:
-    1. `columns_are_regime_confined` + `w2_rows_are_regime_confined`:
-       each column/row trained by exactly one regime.
-    2. `weight_extraction_requires_partition`: extraction requires
-       partition knowledge (proven above).
-    3. `prf_brute_force_optimal` (V2): partition recovery requires
-       ≥ C(n,n/R) queries under the PRF axiom. -/
+/-- Definitional support-count identity, not a weight-opacity claim. -/
 theorem search_space_unfold (A : AdversaryKnowledge) :
     search_space A = Nat.choose A.n_dims (A.n_dims / A.n_regimes) :=
   rfl
@@ -542,22 +412,15 @@ theorem search_space_unfold (A : AdversaryKnowledge) :
 
 
 -- ════════════════════════════════════════════════════════════════
--- §J. SCALING — SECURITY GROWS WITH MODEL SIZE
+-- §J. SCALING OF THE SUPPORT-COUNT EXPONENT
 -- ════════════════════════════════════════════════════════════════
 
-/-- Security bits: the base-2 logarithm of the search space
-    (as a lower bound: we use N/R directly). -/
+/-- Historical name for the N/R support-count exponent, not security bits. -/
 def security_bits (A : AdversaryKnowledge) : ℕ :=
   A.n_dims / A.n_regimes
 
-/-- **Theorem (Monotone Security).**
-    Increasing the hidden dimension (while keeping R fixed)
-    strictly increases the security parameter.
-    Larger models are MORE secure, not less.
-
-    This is important because the trend in ML is toward
-    larger hidden dimensions (768 → 1024 → 4096 → 12288).
-    The gate becomes MORE secure as models scale. -/
+/-- Historical name: increasing dimension at fixed regime count grows
+    the nominal support-count exponent. It does not prove stronger security. -/
 theorem larger_models_more_secure
     (A₁ A₂ : AdversaryKnowledge)
     (hR : A₁.n_regimes = A₂.n_regimes)

@@ -9,8 +9,8 @@ cd "${CDP_REPO_ROOT}"
 lake env lean scripts/lean_claim_audit.lean 2>&1 | tee "${CDP_AUDIT_OUTPUT}"
 
 CDP_AUDITED_COUNT="$(grep -c "depends on axioms" "${CDP_AUDIT_OUTPUT}")"
-if [[ "${CDP_AUDITED_COUNT}" -ne 9 ]]; then
-  echo "Expected 9 audited headline theorems; saw ${CDP_AUDITED_COUNT}." >&2
+if [[ "${CDP_AUDITED_COUNT}" -ne 13 ]]; then
+  echo "Expected 13 audited headline theorems; saw ${CDP_AUDITED_COUNT}." >&2
   exit 1
 fi
 
