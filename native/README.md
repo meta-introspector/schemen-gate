@@ -24,6 +24,8 @@ Install CMake, a C++20 compiler, and LibTorch 2.13+ (or the repository's PyTorch
 extra). From an installed, clean source checkout:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install -e '.[torch]' pytest cmake
 python scripts/check_native.py
 ```

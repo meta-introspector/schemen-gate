@@ -78,3 +78,48 @@ license agreement is currently required.
 
 Do not commit credentials, generated `build/` or `dist/` trees, `.egg-info`,
 model weights, caches, or production receipts.
+
+## Native acceptance and process exit
+
+Run acceptance from a clean, isolated virtual environment created without
+`--system-site-packages`. The native and release entry points reject external
+import roots before importing native ML code. The declared checkout, its `src`
+and `scripts` directories, the venv, and the interpreter standard library are
+allowed. This detects mixed Python installations, not every dynamically linked
+native library or an adversarial Python interpreter.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[crypto,lockbox,onnx,rag,spiffe,torch,dev]' cmake
+python scripts/check_native.py
+python scripts/release_check.py
+```
+
+These commands run under a parent that does not import ML libraries and waits
+for the child process to exit. A printed test PASS followed by a crash is a
+failed acceptance. Each invocation prints the path to a private receipt and
+stdout/stderr logs. Receipts record exit/signal status and stable log hashes;
+NaN/infinite timeouts are rejected. They are diagnostic records, not signed
+execution attestations. No retries occur automatically.
+
+On POSIX, the observer creates an owned process group and stops remaining group
+members on timeout or interruption. A successful child that leaves descendants
+is rejected. If cleanup cannot be confirmed, logs are not declared stable by
+hashing them. This does not contain descendants that deliberately detach into
+new sessions; a killed observer can leave a RUNNING receipt. Other platforms
+only supervise the immediate child. Direct pytest and other scripts remain
+outside these entry points unless run through `scripts/native_acceptance.py`.
+
+Raw logs can contain sensitive data. `--acceptance-logs` explicitly opts in to
+printing them after the run; hosted CI uses that flag for its synthetic test
+fixtures. Local logs are not uploaded automatically. Example direct supervision:
+
+```bash
+python scripts/native_acceptance.py --receipt-dir /tmp/gate-check-unique \
+  --cwd "$PWD" --timeout 600 -- python -m pytest -q tests/test_torch_gate.py
+```
+
+Use a new receipt directory for each run. The isolated environment prevents the
+observed mixed-installation condition; this does not claim that an upstream
+PyTorch shutdown defect has been repaired.

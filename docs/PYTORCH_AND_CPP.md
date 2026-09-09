@@ -55,6 +55,11 @@ authority and training contracts. The existing PKI and replay code is unchanged.
 
 ## Native build and acceptance
 
+Use an isolated venv without system site-packages. Native acceptance waits for
+process exit and writes a private diagnostic receipt; passing test text alone
+is insufficient. See the [acceptance guide](../CONTRIBUTING.md#native-acceptance-and-process-exit)
+for environment checks, log privacy, and process-group limits.
+
 See [native build instructions](../native/README.md).
 `python scripts/check_native.py` verifies C++ CPU behavior and the Python test
 matrix. `--require-cuda` requires hardware and cannot silently pass with GPU

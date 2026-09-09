@@ -13,6 +13,12 @@ import subprocess  # nosec B404
 import sys
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING or __package__:
+    from .native_acceptance import hardened_entry
+else:
+    from native_acceptance import hardened_entry
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_VERSION = "1.0.2"
@@ -219,4 +225,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(hardened_entry(main))

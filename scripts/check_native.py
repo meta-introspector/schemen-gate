@@ -7,6 +7,12 @@ import argparse
 import subprocess  # nosec B404
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING or __package__:
+    from .native_acceptance import hardened_entry
+else:
+    from native_acceptance import hardened_entry
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -32,6 +38,7 @@ def main() -> int:
         "-B",
         str(build),
         f"-DCMAKE_PREFIX_PATH={torch.utils.cmake_prefix_path}",
+        f"-DTorch_DIR={Path(torch.utils.cmake_prefix_path) / 'Torch'}",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=ON",
         f"-DSCHEMEN_GATE_REQUIRE_CUDA={'ON' if args.require_cuda else 'OFF'}",
@@ -46,4 +53,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(hardened_entry(main))

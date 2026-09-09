@@ -4,6 +4,12 @@ All notable changes to Schemen Gate are documented here.
 
 ## Unreleased
 
+- Supervise native/release acceptance through actual process exit. Require an
+  isolated Python environment, reject invalid timeouts, stop owned POSIX
+  process groups, and retain private failure receipts. Never infer acceptance
+  from passing text before a later shutdown crash. CI opts into fixture logs.
+
+
 - Fix excluded-coordinate NaN/Inf propagation: NumPy, PyTorch, and C++ gates
   select positive zero rather than multiply by zero. Preserve active values;
   zero excluded incoming gradients at the local gate boundary. Unsupported

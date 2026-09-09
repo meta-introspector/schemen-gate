@@ -270,6 +270,8 @@ their own [recertification procedure](docs/MODAL_RECERTIFICATION.md).
 ## Development
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install -e '.[crypto,lockbox,onnx,rag,spiffe,torch,dev]'
 python -m pytest -q
 python scripts/bootstrap_build_env.py
