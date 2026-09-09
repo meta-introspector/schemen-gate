@@ -93,10 +93,22 @@ def test_compiled_forward_and_backward() -> None:
     )
 
 
-def test_nonfinite_values_preserve_existing_multiplication_semantics() -> None:
-    gate = GateMask.from_indices([0], n_dims=4)
-    x = torch.tensor([float("inf"), float("nan"), float("inf"), -0.0])
-    torch.testing.assert_close(GateLayer(gate)(x), gate.apply(x), rtol=0, atol=0, equal_nan=True)
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16, torch.float32, torch.float64])
+def test_nonfinite_exclusions_are_positive_zero(device: str, dtype: torch.dtype) -> None:
+    gate = GateMask.from_indices([0, 1, 2, 3], n_dims=8)
+    values = [float("nan"), float("inf"), -float("inf"), -0.0] * 2
+    for execute in (gate.apply, GateLayer(gate).to(device)):
+        x = torch.tensor(values, dtype=dtype, device=device, requires_grad=True)
+        y = execute(x)
+        torch.testing.assert_close(y[:4], x[:4], rtol=0, atol=0, equal_nan=True)
+        assert torch.signbit(y[3])
+        assert torch.equal(y[4:], torch.zeros_like(y[4:]))
+        assert not torch.signbit(y[4:]).any()
+        incoming = torch.tensor(values, dtype=dtype, device=device)
+        gradient = torch.autograd.grad(y, x, incoming)[0]
+        torch.testing.assert_close(gradient[:4], incoming[:4], rtol=0, atol=0, equal_nan=True)
+        assert torch.equal(gradient[4:], torch.zeros_like(gradient[4:]))
+        assert not torch.signbit(gradient[4:]).any()
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA hardware unavailable")
@@ -112,3 +124,16 @@ def test_cuda_device_mismatch_and_current_stream() -> None:
     stream.synchronize()
     assert torch.equal(y, x.detach() * layer.mask)
     assert torch.equal(x.grad, layer.mask.expand_as(x).to(x.dtype))
+
+
+def test_compiled_nonfinite_forward_and_incoming_gradient() -> None:
+    layer = GateLayer(GateMask.from_indices([0], n_dims=4))
+    compiled = torch.compile(layer, backend="aot_eager", fullgraph=True)
+    x = torch.tensor([2.0, float("nan"), float("inf"), -0.0], requires_grad=True)
+    y = compiled(x)
+    assert torch.equal(y, torch.tensor([2.0, 0.0, 0.0, 0.0]))
+    assert not torch.signbit(y).any()
+    incoming = torch.tensor([3.0, float("inf"), float("nan"), -0.0])
+    gradient = torch.autograd.grad(y, x, incoming)[0]
+    assert torch.equal(gradient, torch.tensor([3.0, 0.0, 0.0, 0.0]))
+    assert not torch.signbit(gradient).any()

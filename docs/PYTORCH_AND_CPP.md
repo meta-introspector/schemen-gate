@@ -2,7 +2,7 @@
 
 `GateMask.apply()` already accepts PyTorch tensors. `GateLayer` adds a reusable
 `torch.nn.Module` whose copied mask follows `.to(device)`; the C++ header offers
-the corresponding LibTorch API. Both use ATen multiplication and its existing
+the corresponding LibTorch API. Both use ATen selection and its existing
 CPU/CUDA autograd implementation.
 
 ```python
@@ -35,10 +35,12 @@ projection with active-gradient and excluded-gradient checks.
 - The module mask is a nonpersistent buffer, absent from `state_dict()`.
   Reconstruct it from trusted authority when loading a model; checkpoints must
   not select their own permissions. Live process memory remains trusted.
-- Arithmetic preserves existing multiplication semantics, including NaN/Inf
-  and signed zeros. Exact inactive zeros require finite activations and incoming
-  gradients: IEEE `0 * NaN` is NaN. No changed nonfinite semantics or fast-math
-  flags are introduced.
+- Excluded coordinates are positive zero, including when the input or incoming
+  gradient is NaN, positive/negative infinity, or negative zero. Active values
+  retain their original values and signs, including NaN/Inf. Boolean selection
+  enforces this boundary without multiplying excluded values by zero.
+- This guarantees the local gate output and gradient with respect to its input;
+  upstream nonfinite derivatives may still produce NaNs elsewhere in a graph.
 - Autograd and higher-order gradients use standard Torch operations.
   `torch.compile` is tested with `aot_eager` and `fullgraph=True`; other
   compilers require acceptance. This layer introduces no custom kernel or

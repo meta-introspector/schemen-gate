@@ -4,8 +4,22 @@ All notable changes to Schemen Gate are documented here.
 
 ## Unreleased
 
+- Fix excluded-coordinate NaN/Inf propagation: NumPy, PyTorch, and C++ gates
+  select positive zero rather than multiply by zero. Preserve active values;
+  zero excluded incoming gradients at the local gate boundary. Unsupported
+  generic multiplication-only and masked/nonnumeric NumPy array inputs now
+  raise TypeError. Preserve the established NumPy dtype promotion. Apply the
+  same selection to vector dispatch and Cargo payloads; reject nonfinite skill
+  and query embeddings before normalization. Restrict gated skill ranking and
+  top-k results to the requested regime, including when its best score is
+  negative or no eligible skill exists.
+- Run broker integration CI when its core Gate dependency changes.
+- Label Hydra (Transformer regime lanes) and research training experimental, credit the
+  matched one-seed adaptation factorial, and clarify theorem-model boundaries.
+
+
 - Add an optional PyTorch `GateLayer` and functional mask primitive, plus a
-  C++20 LibTorch header using ATen CPU/CUDA multiplication and autograd.
+  C++20 LibTorch header using ATen CPU/CUDA selection and autograd.
   Include dtype, gradient, stride, mask-copy, checkpoint, and rejection tests,
   a small-to-larger FFN example, native CPU CI, and explicit CUDA acceptance.
 

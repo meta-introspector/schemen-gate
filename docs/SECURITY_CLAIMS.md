@@ -22,11 +22,20 @@ its wording everywhere.
 
 ## Code ↔ theorem map
 
+The Lean results below prove properties of modeled arithmetic and updates, not
+refinement of Python, NumPy, PyTorch, CUDA, or deployed serving code. At the
+execution primitive, boolean selection writes positive zero into excluded
+coordinates even for NaN/Inf input or incoming gradients. Active coordinates
+are preserved, including nonfinite values. This local boundary does not repair
+nonfinite operations elsewhere in a graph or prove optimizer confinement.
+Real-number algebra must not be interpreted as a universal IEEE floating-point
+or whole-model theorem.
+
 | Code path | Lean theorem(s) | Tier |
 |---|---|---|
 | `_crypto._csprng_permutation` (Fisher–Yates, HMAC-SHA256 counter mode, **rejection sampling**) | `rejection_sampling_count`, `rejection_unbiased` (GateSecurity §10) | Proven (uniformity); PRF assumption for indistinguishability |
 | `_crypto.derive_partition` (equal slices, disjoint, exhaustive) | `ValidPartition` structure: `equal_size`, `disjoint`, `exhaustive`; `unique_membership` (GateSecurity §6) | Proven |
-| `GateMask.apply` / `_mask.py` forward gating | `forward_isolation`, `gradient_isolation`, `gradient_confinement` (GateSecurity §1) | Proven |
+| `GateMask.apply` / `_mask.py` forward gating | `forward_isolation`, `gradient_isolation`, `gradient_confinement` (GateSecurity §1) | Proven in the mathematical model; implementation correspondence is tested, not formally proved |
 | Gate-aware training with a conforming aligned update (including optimizer moments and weight decay) | `weight_update_confined`, `w2_update_confined`, `step_confined`, `end_to_end_isolation` (GateSecurity §2, §12, §13) | Proven for the modeled update contract |
 | Wrong-mask inference behavior | `wrong_mask_reads_wrong_dims`, `wrong_key_valid_distribution` (GateSecurity §7, ModelSecurityV2 §4) | Proven |
 | Exact combinatorial floor on partition recovery | `central_binom_lower`, `general_exponential_search`, `exceeds_aes256_security` (ModelSecurity §B–§E) | Proven |
@@ -42,7 +51,9 @@ its wording everywhere.
 Masks in this codebase are **binary 0/1 partition masks**. "Hadamard
 product" throughout means the *elementwise (Schur) product* `h ⊙ M` — not
 the ±1 Hadamard matrix construction. The Lean `hmul` definition is
-elementwise multiplication; the wording is consistent if read this way.
+elementwise multiplication over the modeled number domain. Numerical Gate
+implementations use boolean selection so excluded nonfinite values become
+positive zero as well; they do not evaluate the excluded multiplication.
 
 ## Scope exclusions (not certified, do not claim)
 

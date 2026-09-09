@@ -1,6 +1,6 @@
 # C++ / LibTorch Gate execution
 
-The optional C++20 header uses the same last-axis multiplication as
+The optional C++20 header uses the same last-axis selection as
 `GateMask.apply()` and `schemen_gate.torch.GateLayer`. LibTorch supplies the
 ATen CPU/CUDA operator and autograd; a C++ application needs no Python
 interpreter or custom CUDA kernel.
@@ -31,9 +31,9 @@ python scripts/check_native.py
 For standalone LibTorch, without Python:
 
 ```bash
-cmake -S native -B build/native -DCMAKE_PREFIX_PATH=/path/to/libtorch
+cmake -S native -B build/native -DCMAKE_PREFIX_PATH=/path/to/libtorch -DBUILD_TESTING=ON
 cmake --build build/native --parallel 2
-ctest --test-dir build/native --output-on-failure
+ctest --test-dir build/native --output-on-failure --no-tests=error
 ```
 
 A parent CMake project can add this directory with `add_subdirectory()` and

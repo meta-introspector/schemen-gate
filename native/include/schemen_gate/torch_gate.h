@@ -30,8 +30,8 @@ inline at::Tensor apply_mask(const at::Tensor& hidden, const at::Tensor& mask) {
   TORCH_CHECK(hidden.device() == mask.device(),
               "Gate input and mask must share a CPU or CUDA device");
   // Use the native ATen operator for dispatch, current-stream handling, and
-  // autograd. Preserve IEEE multiplication, including nonfinite input behavior.
-  return at::mul(hidden, mask);
+  // autograd. Selection prevents excluded NaN/Inf values and gradients surviving.
+  return at::where(mask, hidden, at::zeros({}, hidden.options()));
 }
 
 class TorchGate final {

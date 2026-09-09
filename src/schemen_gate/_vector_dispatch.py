@@ -132,13 +132,15 @@ class SkillRegistry:
             raise ValueError("regime_id requires a gate-configured registry")
         vec = self._embed_fn(description)
         vec = np.asarray(vec, dtype=np.float64).ravel()
+        if not np.all(np.isfinite(vec)):
+            raise ValueError("Skill embeddings must contain only finite values")
         norm = np.linalg.norm(vec)
         if norm > 1e-12:
             vec = vec / norm
 
         if regime_id is not None and self.gating_enabled:
             mask = self._get_mask(regime_id)
-            vec = vec * mask.to_numpy()
+            vec = mask.apply(vec)
             re_norm = np.linalg.norm(vec)
             if re_norm > 1e-12:
                 vec = vec / re_norm
@@ -162,7 +164,8 @@ class SkillRegistry:
         """Find the best-matching skill for a query.
 
         If gate_regime is provided and gating is enabled, the query vector
-        is projected into that regime's subspace before comparison.
+        is projected into that regime's subspace and only skills registered
+        to that regime are eligible. Similarity is routing, not authorization.
         """
         if self.gating_enabled and gate_regime is None:
             raise ValueError("gated registries require an explicit gate_regime")
@@ -173,6 +176,8 @@ class SkillRegistry:
 
         q_vec = self._embed_fn(query)
         q_vec = np.asarray(q_vec, dtype=np.float64).ravel()
+        if not np.all(np.isfinite(q_vec)):
+            raise ValueError("Query embeddings must contain only finite values")
         q_norm = np.linalg.norm(q_vec)
         if q_norm > 1e-12:
             q_vec = q_vec / q_norm
@@ -180,7 +185,7 @@ class SkillRegistry:
         gated = False
         if gate_regime is not None and self.gating_enabled:
             mask = self._get_mask(gate_regime)
-            q_vec = q_vec * mask.to_numpy()
+            q_vec = mask.apply(q_vec)
             re_norm = np.linalg.norm(q_vec)
             if re_norm > 1e-12:
                 q_vec = q_vec / re_norm
@@ -188,9 +193,13 @@ class SkillRegistry:
 
         scores: List[Tuple[str, float]] = []
         for skill_id, fp in self._skills.items():
+            if gated and fp.regime_id != gate_regime:
+                continue
             score = float(np.dot(q_vec, fp.vector))
             scores.append((skill_id, score))
 
+        if not scores:
+            raise ValueError("No skills registered for gate_regime")
         scores.sort(key=lambda x: x[1], reverse=True)
 
         best_id, best_score = scores[0]
@@ -217,7 +226,7 @@ class SkillRegistry:
         *,
         gate_regime: Optional[int] = None,
     ) -> List[DispatchResult]:
-        """Return the top-k matching skills."""
+        """Return up to k matching skills eligible for the requested regime."""
         if self.gating_enabled and gate_regime is None:
             raise ValueError("gated registries require an explicit gate_regime")
         if not self.gating_enabled and gate_regime is not None:
@@ -227,6 +236,8 @@ class SkillRegistry:
 
         q_vec = self._embed_fn(query)
         q_vec = np.asarray(q_vec, dtype=np.float64).ravel()
+        if not np.all(np.isfinite(q_vec)):
+            raise ValueError("Query embeddings must contain only finite values")
         q_norm = np.linalg.norm(q_vec)
         if q_norm > 1e-12:
             q_vec = q_vec / q_norm
@@ -234,7 +245,7 @@ class SkillRegistry:
         gated = False
         if gate_regime is not None:
             mask = self._get_mask(gate_regime)
-            q_vec = q_vec * mask.to_numpy()
+            q_vec = mask.apply(q_vec)
             re_norm = np.linalg.norm(q_vec)
             if re_norm > 1e-12:
                 q_vec = q_vec / re_norm
@@ -242,9 +253,13 @@ class SkillRegistry:
 
         scores: List[Tuple[str, float]] = []
         for skill_id, fp in self._skills.items():
+            if gated and fp.regime_id != gate_regime:
+                continue
             score = float(np.dot(q_vec, fp.vector))
             scores.append((skill_id, score))
 
+        if not scores:
+            raise ValueError("No skills registered for gate_regime")
         scores.sort(key=lambda x: x[1], reverse=True)
 
         results = []

@@ -747,3 +747,19 @@ class TestBridgeGateComposition:
             model.b,
             err_msg="Cross-regime gated + projected should give bias-only output",
         )
+
+
+def test_vector_payload_excluded_negative_zero_is_positive_zero():
+    from schemen_gate import GateMask
+
+    gate = GateMask.from_indices([0], n_dims=3)
+    payload = VectorPayload(
+        vectors=np.array([-0.0, -1.0, -0.0]),
+        gate_mask=gate,
+        regime_id=0,
+        source_doc_ids=["fixture"],
+    )
+    selected = payload.gated()
+    np.testing.assert_array_equal(selected, np.zeros(3))
+    assert np.signbit(selected[0])
+    assert not np.signbit(selected[1:]).any()

@@ -48,7 +48,11 @@ represented as raw records or new Gate-only reruns. The
 [data inventory](../research/cdp/docs/experiment-data-inventory.md) connects paper
 claims to artifacts, protocols, gate placement, and retained negative results.
 
-## Later real-model Transformer lane evidence
+## Hydra: experimental Transformer regime lanes
+
+**Status: experimental; not production-ready.** Hydra is the Transformer
+regime-lane research track. The following controlled results validate working
+mechanisms within the tested scope; they do not establish a production service.
 
 The [companion claim ledger](../research/cdp/gated-transformer-regime-lanes/CLAIM_LEDGER.md)
 reports authorization before private attention-bank lookup, complete Q/K/V/O
@@ -78,7 +82,7 @@ not a substitute for raw receipts when independent GPU reproduction is needed.
 | Transformer lane work is not production-ready | This is the stated disposition of that research track. It does not by itself establish the maturity of the separately scoped core library. |
 | Lean does not prove implementation refinement | Correct distinction. The repository also supplies tensor, optimizer, routing, and real-model experiments; absence of refinement is not absence of implementation evidence. |
 | X.509/CRL/OCSP needs specialist review | A reasonable assurance requirement. Assess the [profile](X509_PROFILE.md), negative tests, and [review policy](SECURITY_ENGINEERING.md). Maintainer review or experiment replication is not automatically an independent PKI audit. |
-| Distributed replay needs durable state | A documented integration obligation. `OperationGateVerifier` retains state per instance; Cargo's default bus tracks replay locally. An authenticated restore method alone does not provide persistence or cross-replica atomicity. |
+| Distributed replay needs durable state | A documented integration obligation. `OperationGateVerifier` retains state per instance; Cargo's default bus tracks replay locally. An authenticated restore method alone does not provide persistence or cross-replica atomicity. The separate broker supplies transactional SQLite consumption; this does not establish general multi-host replay prevention or exactly-once external effects. |
 | A private serving implementation cannot be fully evaluated here | Correct for that implementation's complete endpoint boundary. Public callback-ordering, scope-rejection, and model experiments still supply evidence for the surfaces they actually test. |
 | Author-run studies are not independently replicated | Authorship limits independence; it does not erase the measurements. Independent training states and cross-model replication must not be mislabeled as replication by an independent organization. |
 | Hostile host, timing, allocator, and arbitrary process interference | Explicit exclusions in the lane ledger. Treat them as additional threat models requiring evidence, not failed claims that the study made. |

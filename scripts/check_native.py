@@ -33,10 +33,11 @@ def main() -> int:
         str(build),
         f"-DCMAKE_PREFIX_PATH={torch.utils.cmake_prefix_path}",
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTING=ON",
         f"-DSCHEMEN_GATE_REQUIRE_CUDA={'ON' if args.require_cuda else 'OFF'}",
     )
     run("cmake", "--build", str(build), "--parallel", "2")
-    run("ctest", "--test-dir", str(build), "--output-on-failure")
+    run("ctest", "--test-dir", str(build), "--output-on-failure", "--no-tests=error")
     run(sys.executable, "-m", "pytest", "-q", "-rs", "tests/test_torch_gate.py")
     print(
         f"PASS: Gate LibTorch/PyTorch {'CPU and CUDA' if args.require_cuda else 'CPU'} acceptance"

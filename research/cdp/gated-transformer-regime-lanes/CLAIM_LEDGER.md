@@ -1,5 +1,9 @@
 # Claim ledger
 
+**Hydra status: experimental; not production-ready.** Hydra names this
+Transformer regime-lane research track; retained controlled validation is
+evidence within the tested scope, not a deployed production guarantee.
+
 **Decision:** accepted as a controlled research baseline<br>
 **Production status:** not deployed; not production-ready<br>
 **Primary paper:** [SCHEMEN_GATED_TRANSFORMER_REGIME_LANES_PAPER.md](SCHEMEN_GATED_TRANSFORMER_REGIME_LANES_PAPER.md)

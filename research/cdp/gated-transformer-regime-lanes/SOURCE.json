@@ -38,6 +38,14 @@
     {
       "path": "results/toy_gated_delta_head_result.json",
       "reason": "Applied the matching non-numerical negative-scope label change to the retained toy result."
+    },
+    {
+      "path": "README.md",
+      "reason": "Explicitly labeled the Hydra research track experimental and not production-ready; retained results and their scope are unchanged."
+    },
+    {
+      "path": "CLAIM_LEDGER.md",
+      "reason": "Explicitly labeled the Hydra research track experimental and not production-ready; retained results and their scope are unchanged."
     }
   ],
   "imported_into": "https://github.com/sekosai/schemen-gate/tree/main/research/cdp/gated-transformer-regime-lanes",

@@ -18,6 +18,13 @@ machine-readable experiment results, real-model studies, and their exact claim
 boundaries. The core library, original CDP experiments, and later Transformer
 lane study have separate scopes and acceptance criteria.
 
+**Hydra (Transformer regime lanes) and the training/adaptation protocols are
+experimental and not production-ready.** Their controlled experiments validate
+working approaches within stated conditions, not provider deployment readiness.
+See [Hydra's research status](research/cdp/gated-transformer-regime-lanes/README.md)
+and [training boundaries](docs/TRAINING.md). The core package's stability
+classification does not extend production support to these research surfaces.
+
 A **Regime** is the execution scope resolved from verified authority. It can
 select a model capability, attachment, data partition, or declared activation
 support. A caller-supplied Regime number or mask does not authenticate itself.
@@ -99,7 +106,7 @@ credential loading and signing, run `python examples/pkcs12_identity.py`.
 
 For a reusable PyTorch module and a C++ LibTorch execution API, see
 [PyTorch, C++, and CUDA integration](docs/PYTORCH_AND_CPP.md). The primitive
-uses ATen CPU/CUDA multiplication and autograd on an already-authorized mask.
+uses ATen CPU/CUDA selection and autograd on an already-authorized mask.
 
 ## See the authority change
 
@@ -130,10 +137,11 @@ MNIST fixture, not evidence of complete model privacy.
 The core activation operation is deliberately small:
 
 ```python
-gated = hidden * authorized_binary_mask
+gated = authorized_gate_mask.apply(hidden)
 ```
 
-Its value depends on the authority that selects the mask, its placement, and
+Excluded coordinates become positive zero even for NaN/Inf input. Active
+values are preserved. Its value depends on the authority that selects the mask, its placement, and
 the state governed by it. Applying a mask after ordinary training does not
 retroactively create tenant-private knowledge.
 

@@ -17,8 +17,8 @@ _DTYPES = (torch.float16, torch.bfloat16, torch.float32, torch.float64)
 def apply_mask(hidden: Tensor, mask: Tensor) -> Tensor:
     """Apply a boolean last-axis mask with ATen CPU/CUDA autograd semantics.
 
-    This is multiplication, matching GateMask.apply on supported floating
-    tensors. Exact excluded zeros require finite values (IEEE 0 * NaN is NaN).
+    Excluded values and incoming gradients become positive zero, including
+    NaN and infinity. Active values are preserved, including nonfinite values.
     Mask bytes are configuration, not proof of authorization.
     """
     if hidden.layout != torch.strided or mask.layout != torch.strided:
@@ -31,7 +31,7 @@ def apply_mask(hidden: Tensor, mask: Tensor) -> Tensor:
         raise ValueError("Gate input's final dimension must equal the mask width")
     if hidden.device != mask.device or hidden.device.type not in ("cpu", "cuda"):
         raise ValueError("Gate input and mask must share a CPU or CUDA device")
-    return torch.mul(hidden, mask)
+    return torch.where(mask, hidden, torch.zeros((), dtype=hidden.dtype, device=hidden.device))
 
 
 class GateLayer(nn.Module):

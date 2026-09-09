@@ -2,6 +2,7 @@
 #include <torch/torch.h>
 
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -41,6 +42,23 @@ int main(int argc, char** argv) {
       require(at::equal(y, x.detach() * expected_mask), "forward mismatch");
       y.sum().backward();
       require(at::equal(x.grad(), expected_mask.expand_as(x)), "gradient mismatch");
+      const auto inf = std::numeric_limits<double>::infinity();
+      const auto nan = std::numeric_limits<double>::quiet_NaN();
+      for (double excluded : {nan, inf, -inf, -0.0}) {
+        auto special = at::tensor({inf, excluded, -0.0, excluded},
+                                  at::TensorOptions().dtype(at::kDouble)).to(options);
+        special.set_requires_grad(true);
+        auto result = gate.apply(special);
+        require(at::isinf(result[0]).item<bool>(), "active infinity changed");
+        require(at::signbit(result[2]).item<bool>(), "active negative zero changed");
+        auto denied = result.slice(0, 1, 4, 2);
+        require(at::equal(denied, at::zeros_like(denied)), "excluded nonfinite survived");
+        require(!at::signbit(denied).any().item<bool>(), "excluded negative zero");
+        result.backward(special.detach());
+        auto denied_grad = special.grad().slice(0, 1, 4, 2);
+        require(at::equal(denied_grad, at::zeros_like(denied_grad)), "excluded gradient survived");
+        require(!at::signbit(denied_grad).any().item<bool>(), "excluded gradient negative zero");
+      }
       auto strided = x.detach().transpose(0, 1);
       require(at::equal(gate.apply(strided), strided * expected_mask),
               "noncontiguous mismatch");
