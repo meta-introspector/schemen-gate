@@ -12,6 +12,12 @@ decision.
 trusted identity → signed grant → authorized Regime → Gate → execution evidence
 ```
 
+For technical evaluation, start with the
+[research evidence map](docs/RESEARCH_EVIDENCE.md): executable controls,
+machine-readable experiment results, real-model studies, and their exact claim
+boundaries. The core library, original CDP experiments, and later Transformer
+lane study have separate scopes and acceptance criteria.
+
 A **Regime** is the execution scope resolved from verified authority. It can
 select a model capability, attachment, data partition, or declared activation
 support. A caller-supplied Regime number or mask does not authenticate itself.
