@@ -644,17 +644,20 @@ exclusion once the correct mask is applied.
 
 \paragraph{Computational overhead of the gate.}
 \label{sec:gate-overhead}
-The gate is one element-wise multiply over $d$ coordinates per gated
-tensor per invocation: $d$ scalar multiplications with no accumulation in the
-forward pass and one broadcast multiply in the backward pass, against
+The mathematical gate is one element-wise product over $d$ coordinates per
+gated tensor per invocation.  The checked-in fail-closed runtime evaluates the
+finite-value-equivalent operation as a Boolean selection, writing positive zero
+on excluded coordinates so that IEEE-754 NaN and infinity do not survive there.
+It requires $d$ element-wise selections with no accumulation in the forward
+pass and the corresponding selection in the backward pass, against
 the $\Theta(d\cdot d_{\text{in}})$ and $\Theta(d\cdot d_{\text{out}})$
 MACs of the two projections it guards.  It is emphatically not an
 extra matrix multiplication: implemented as a dense --- or even an
 explicit diagonal --- matrix product $\mathrm{diag}(\bg_r)\,\bh$ it
 would cost $\Theta(d^2)$ MACs per gated boundary, but that is an
 implementation error, not a property of the mechanism.  Evaluated as
-element-wise broadcast multiply (as in the checked-in implementations)
-its memory traffic is two vector reads and one vector write and may be
+element-wise selection, its memory traffic is two vector reads and one vector
+write and may be
 fused into the epilogue or prologue of a surrounding GEMM.  For
 inference-output equivalence, a mask that is constant for a packaged
 artifact may instead be folded into the aligned rows of $\bW_2$.
@@ -666,12 +669,14 @@ not as the same gate surface.  A bit-packed mask requires $d$ bits
 runtime tensor requires implementation-dependent additional storage.
 Enforcement is therefore not free, but the unfused operation is linear
 in the gated width rather than quadratic.  We make no numerical latency claim for the
-gate: the only systems figures in this repository are
+gate in this study: its systems figures are
 \Cref{sec:deployment}'s state-dict arithmetic and
-\Cref{sec:permutation-equivariance}'s keyed-basis benchmark, the
+\Cref{sec:permutation-equivariance}'s keyed-basis benchmark, and the
 historical throughput figures are withheld pending hardware-matched
-rerun (\Cref{sec:deployment}), and no dedicated gate-overhead
-microbenchmark is yet part of the checked-in evidence.
+rerun (\Cref{sec:deployment}).  A later library-level NumPy component
+benchmark, added after this study, measures the fail-closed public API and is
+indexed in \path{docs/PERFORMANCE.md}; it is not model-level or submission
+evidence for this paper.
 
 \paragraph{Orthogonality of disjoint gated activations.}
 For two regimes $r,s$ with disjoint masks

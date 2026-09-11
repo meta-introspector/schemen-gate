@@ -61,6 +61,7 @@ EXPECTED_TOP_LEVEL = {
     "RELEASE_MANIFEST.sha256",
     "ROADMAP.md",
     "SECURITY.md",
+    "benchmarks",
     "docs",
     "examples",
     "native",
