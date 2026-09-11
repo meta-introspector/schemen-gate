@@ -108,6 +108,46 @@ For a reusable PyTorch module and a C++ LibTorch execution API, see
 [PyTorch, C++, and CUDA integration](docs/PYTORCH_AND_CPP.md). The primitive
 uses ATen CPU/CUDA selection and autograd on an already-authorized mask.
 
+## Performance
+
+Applying an already-authorized Gate visits each activation coordinate once:
+for `M` activation vectors of width `d`, execution is $\Theta(Md)$. The two
+dense projections around a gated Transformer FFN require
+$\Theta(Md_{in}d)$ and $\Theta(Mdd_{out})$ multiply-accumulates. When those
+widths scale together, the projection work is quadratic in `d`; the Gate does
+not add another matrix multiplication. The current fail-closed implementation
+uses selection, `where(mask, hidden, +0)`, so excluded NaN and infinity become
+positive zero.
+
+Placement also changes the system boundary. An output-control pipeline that
+runs full inference, classifies the result, and then withholds or sequesters it
+has already allowed the governed computation to reach an output. An internal
+Gate can deny the excluded activation path before the following projection and
+before an output exists. That can avoid a post-inference containment stage for
+the same authority decision, although the component timings below do not count
+those system-level savings. An unfused dense projection also retains its nominal
+compute cost; folding, extraction, structured sparse execution, or fusion is
+needed to turn excluded coordinates into projection savings.
+
+A checked-in single-threaded NumPy component run measured the public
+`GateMask.apply` API against one reused float64 square projection on the same
+arm64 CPU:
+
+| Width `d` | Gate median | Square projection median | Gate / projection |
+|---:|---:|---:|---:|
+| 768 | 1.50 us | 7.17 us | 20.95% |
+| 4,096 | 3.17 us | 1.415 ms | 0.224% |
+| 12,288 | 7.76 us | 11.806 ms | 0.066% |
+
+The 768-dimensional result is a useful warning: operation-count ratios do not
+predict latency for small calls, where Python, dispatch, allocation, and memory
+traffic matter. These numbers cover forward-only NumPy execution after
+authorization; they are not PyTorch, C++, CUDA, backward-pass, PKI, or
+end-to-end inference measurements. See the
+[performance evidence and boundaries](docs/PERFORMANCE.md) for the exact
+command, machine-readable receipt, model-level results, historical claims, and
+experimental Hydra measurements.
+
 ## See the authority change
 
 Open the [live digit-model demo](https://demo.sekos.ai/cdp). Select the digit-7

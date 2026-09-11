@@ -45,6 +45,17 @@
         "output/pdf/binary-activation-core.pdf"
       ],
       "reason": "Propagate the corrected formal inventory and claim boundaries to the research entry point and rebuild both affected publications; historical experimental measurements are unchanged."
+    },
+    {
+      "base_repository": "https://github.com/sekosai/schemen-gate",
+      "base_commit": "f00e601471d0f9ebe8ece681be530f5ca79e19f0",
+      "paths": [
+        "paper/cdp.tex",
+        "paper/cdp.pdf",
+        "paper/split/binary-activation-core.tex",
+        "output/pdf/binary-activation-core.pdf"
+      ],
+      "reason": "Reconcile the papers' preexisting no-microbenchmark wording with a later library-level NumPy component benchmark; preserve the papers' model-level latency boundary and all historical experimental measurements."
     }
   ]
 }

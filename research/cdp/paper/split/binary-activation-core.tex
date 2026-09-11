@@ -243,23 +243,26 @@ gate comes from the binary mask, not from secrecy of the permutation.
 
 \subsection{Computational overhead}
 
-The runtime gate is one element-wise multiply over $d$ coordinates per gated
-tensor: $d$ scalar multiplications with no accumulation, rather than an extra
-matrix product. Writing the operation as
+The mathematical gate is one element-wise product over $d$ coordinates per
+gated tensor. The checked-in fail-closed runtime evaluates the
+finite-value-equivalent operation as $d$ Boolean selections with no
+accumulation and writes positive zero on excluded coordinates so that IEEE-754
+NaN and infinity do not survive there. Writing the operation as
 $\operatorname{diag}(\bg_r)\bh$ and evaluating that dense matrix would cost
 $\Theta(d^2)$ operations and would be an implementation error. The intended
-broadcast multiply is $\Theta(d)$ against the
+selection is $\Theta(d)$ against the
 $\Theta(d\,d_{\mathrm{in}})$ and $\Theta(d\,d_{\mathrm{out}})$ projection
 costs around it, and it may be fused with a surrounding kernel.
 
 For inference-output equivalence, a constant mask may instead be folded into
 the aligned rows of the down projection. That packaging transformation removes
-the per-request multiply, but it does not instantiate the declared
+the per-request selection, but it does not instantiate the declared
 activation-level zero or the training-state confinement boundary; it is an
 extracted or reparameterized artifact. A bit-packed mask requires $d$ bits
 (96 bytes at $d=768$), while an expanded Boolean or floating-point tensor uses
-more implementation-dependent storage. No dedicated gate-overhead
-microbenchmark is included, so this paper makes no numerical latency claim.
+more implementation-dependent storage. A later library-level NumPy component
+benchmark is indexed in \path{docs/PERFORMANCE.md}; it postdates this study and
+is not model-level evidence, so this paper makes no numerical latency claim.
 
 \section{FFN Placement and Confinement}
 

@@ -1,0 +1,113 @@
+{
+  "environment": {
+    "blas": "accelerate",
+    "logical_cpu_count": 18,
+    "machine": "arm64",
+    "numpy": "2.4.6",
+    "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+    "python": "3.14.6",
+    "thread_environment": {
+      "MKL_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    }
+  },
+  "exclusions": [
+    "PKI and grant verification",
+    "mask derivation",
+    "backward pass",
+    "PyTorch, C++, and CUDA",
+    "end-to-end model inference"
+  ],
+  "generated_at_utc": "2026-09-11T22:19:46.206826+00:00",
+  "measurements": [
+    {
+      "batch_vectors": 1,
+      "dense_projection_multiply_accumulates": 589824,
+      "dense_square_projection": {
+        "iterations_per_sample": 8192,
+        "maximum_microseconds": 8.299397827148438,
+        "median_microseconds": 7.169118286132813,
+        "minimum_microseconds": 6.982666015625,
+        "samples": 15
+      },
+      "dtype": "float64",
+      "gate": {
+        "iterations_per_sample": 32768,
+        "maximum_microseconds": 1.63475927734375,
+        "median_microseconds": 1.5022646484375,
+        "minimum_microseconds": 1.4693590698242187,
+        "samples": 15
+      },
+      "gate_overhead_percent_of_one_projection": 20.954663997430792,
+      "gate_selection_elements": 768,
+      "gate_to_projection_ratio": 0.20954663997430792,
+      "width": 768
+    },
+    {
+      "batch_vectors": 1,
+      "dense_projection_multiply_accumulates": 16777216,
+      "dense_square_projection": {
+        "iterations_per_sample": 64,
+        "maximum_microseconds": 1880.276046875,
+        "median_microseconds": 1415.387359375,
+        "minimum_microseconds": 1321.0234375,
+        "samples": 15
+      },
+      "dtype": "float64",
+      "gate": {
+        "iterations_per_sample": 16384,
+        "maximum_microseconds": 3.441561340332031,
+        "median_microseconds": 3.1737594604492188,
+        "minimum_microseconds": 3.1405003662109374,
+        "samples": 15
+      },
+      "gate_overhead_percent_of_one_projection": 0.22423257064063876,
+      "gate_selection_elements": 4096,
+      "gate_to_projection_ratio": 0.0022423257064063877,
+      "width": 4096
+    },
+    {
+      "batch_vectors": 1,
+      "dense_projection_multiply_accumulates": 150994944,
+      "dense_square_projection": {
+        "iterations_per_sample": 8,
+        "maximum_microseconds": 15997.010374999998,
+        "median_microseconds": 11806.104125,
+        "minimum_microseconds": 10900.317749999998,
+        "samples": 15
+      },
+      "dtype": "float64",
+      "gate": {
+        "iterations_per_sample": 8192,
+        "maximum_microseconds": 10.033905029296875,
+        "median_microseconds": 7.762298583984375,
+        "minimum_microseconds": 7.557484863281251,
+        "samples": 15
+      },
+      "gate_overhead_percent_of_one_projection": 0.06574817993979344,
+      "gate_selection_elements": 12288,
+      "gate_to_projection_ratio": 0.0006574817993979344,
+      "width": 12288
+    }
+  ],
+  "method": {
+    "clock": "time.perf_counter_ns",
+    "minimum_sample_seconds": 0.05,
+    "projection": "one float64 row vector times one reused width-by-width matrix",
+    "random_seed": 20260911,
+    "sample_statistic": "median of per-call batch timings",
+    "warmup_calls": 5
+  },
+  "schema": "schemen-gate-execution-benchmark/v1",
+  "scope": "Fail-closed NumPy GateMask.apply forward execution after authorization, compared with one dense square projection on the same host.",
+  "source": {
+    "benchmark_script_sha256": "27928fd1394f1cedc6f48de1168a12cbb7d326918db3f24386dd08f7ccab18f9",
+    "gate_implementation_sha256": "4ed8408d8e14edf3c71c7047f36692add18933909e6c87320f63f37c443d4b5b",
+    "git": {
+      "revision": "f00e601471d0f9ebe8ece681be530f5ca79e19f0",
+      "tree_clean": true
+    }
+  }
+}
