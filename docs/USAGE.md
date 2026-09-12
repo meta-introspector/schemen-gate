@@ -170,9 +170,11 @@ The package is broader than `GateMask`:
   model-training or absorption method because an arbitrary optimizer cannot be
   proven support-restricted. The downstream generator and any audited training
   loop remain separate capability and trust boundaries.
-- [`fold_vector`](../src/schemen_gate/_regime0_fold.py) is a lossless row codec,
+- [`fold_vector`](../src/schemen_gate/_row_folding.py) is a generic lossless row codec,
   not a Gate or storage-confinement mechanism. It applies no mask and grants no
-  write authority; callers must enforce those boundaries separately.
+  write authority; callers must enforce those boundaries separately. The old
+  `_regime0_fold` module is a compatibility import path, not a Regime-0 or Hydra
+  implementation.
 
 Public entry points are grouped in
 [`schemen_gate.__init__`](../src/schemen_gate/__init__.py). Executable contract

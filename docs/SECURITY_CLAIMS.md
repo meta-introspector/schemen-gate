@@ -128,8 +128,10 @@ positive zero as well; they do not evaluate the excluded multiplication.
     root distribution, key protection, renewal, revocation publication,
     transport egress, and host compromise remain within the operator's
     classical IT boundary.
-11. **Lossless folding and model training.** `_regime0_fold.py` is an encoding
-    codec, not a Gate or storage-authority boundary. `GatedRAGAdapter` confines
+11. **Lossless folding and model training.** `_row_folding.py` is a generic
+    encoding codec, not a Gate, Hydra, or storage-authority boundary. The old
+    `_regime0_fold.py` name is only a compatibility import path.
+    `GatedRAGAdapter` confines
     its stable surface to retrieval and rejects model-training cache policies;
     it does not accept arbitrary optimizers or claim parameter-state
     confinement for them.

@@ -1,4 +1,4 @@
-"""POC 3: lossless row folding for full-dimensional reconstitution.
+"""Lossless generic row folding for full-dimensional reconstitution.
 
 Measures whether encoding a full n_dim vector across R compact rows allows
 full reconstitution after unfold and preserves downstream task accuracy. This
@@ -14,7 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from schemen_gate._regime0_fold import (
+from schemen_gate._row_folding import (
     fold_matrix,
     fold_vector,
     reconstruction_quality,
@@ -184,12 +184,12 @@ class TestDownstreamAccuracy:
 
 
 # ===========================================================================
-# Test: Regime0 storage properties
+# Test: Row representation properties
 # ===========================================================================
 
 
-class TestRegime0StorageProperties:
-    """Verify properties specific to the Regime0 folding mechanism."""
+class TestRowRepresentationProperties:
+    """Verify properties of the generic folding representation."""
 
     def test_each_row_fits_regime_width(self):
         """Each folded row has exactly n_dims / R elements."""

@@ -1,7 +1,7 @@
 """Follow-up 3: Real model folding with DistilBERT hidden states.
 
 Tests whether actual model activations (not random vectors) survive
-fold/unfold through Regime0, and whether downstream task accuracy
+generic fold/unfold, and whether downstream task accuracy
 is preserved on real classification data.
 
 Requires: pip install transformers torch datasets
@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from schemen_gate._regime0_fold import (
+from schemen_gate._row_folding import (
     fold_matrix,
     fold_vector,
     reconstruction_quality,

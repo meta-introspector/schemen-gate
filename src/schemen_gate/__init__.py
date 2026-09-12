@@ -175,7 +175,7 @@ if TYPE_CHECKING:
         compress_vectors,
     )
     from schemen_gate._rag_stores import PgVectorStore
-    from schemen_gate._regime0_fold import (
+    from schemen_gate._row_folding import (
         FoldedRepresentation,
         fold_matrix,
         fold_vector,
@@ -643,13 +643,13 @@ _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
     "DispatchResult": ("_vector_dispatch", "DispatchResult"),
     "SkillFingerprint": ("_vector_dispatch", "SkillFingerprint"),
     "SkillRegistry": ("_vector_dispatch", "SkillRegistry"),
-    # _regime0_fold
-    "FoldedRepresentation": ("_regime0_fold", "FoldedRepresentation"),
-    "fold_matrix": ("_regime0_fold", "fold_matrix"),
-    "fold_vector": ("_regime0_fold", "fold_vector"),
-    "reconstruction_quality": ("_regime0_fold", "reconstruction_quality"),
-    "unfold_matrix": ("_regime0_fold", "unfold_matrix"),
-    "unfold_vector": ("_regime0_fold", "unfold_vector"),
+    # _row_folding
+    "FoldedRepresentation": ("_row_folding", "FoldedRepresentation"),
+    "fold_matrix": ("_row_folding", "fold_matrix"),
+    "fold_vector": ("_row_folding", "fold_vector"),
+    "reconstruction_quality": ("_row_folding", "reconstruction_quality"),
+    "unfold_matrix": ("_row_folding", "unfold_matrix"),
+    "unfold_vector": ("_row_folding", "unfold_vector"),
     # _von
     "QuantizationLevel": ("_von", "QuantizationLevel"),
     "VONFrame": ("_von", "VONFrame"),

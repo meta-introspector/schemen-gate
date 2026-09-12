@@ -60,6 +60,11 @@ Hydra (Transformer regime lanes) and training/adaptation protocols are
 **experimental and not production-ready**. Their controlled validation does
 not promote them to supported production implementations.
 
+The exact code-ownership split is recorded in
+[`HYDRA_CODE_BOUNDARY.md`](HYDRA_CODE_BOUNDARY.md). In particular, the stable
+row-folding exports are generic representation helpers retained for 1.x
+compatibility; they do not implement Hydra topology or Gate authority.
+
 Research runners, paper build files, release-maintainer scripts, benchmarks,
 and checked-in result records are reviewable and versioned with the Git tag,
 but they are not installed Python APIs. Their command contracts are documented

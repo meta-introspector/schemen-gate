@@ -4,6 +4,12 @@ All notable changes to Schemen Gate are documented here.
 
 ## Unreleased
 
+- Separate the generic lossless row codec from Hydra/Regime-0 naming while
+  preserving the 1.x import surface through a compatibility module. Reject
+  malformed fold topology explicitly, detach caller-owned row arrays, and
+  document that Gate owns admission primitives while serving integrations own
+  model topology, batching, decoder state, cancellation, and profiling.
+
 - Remove the global partition-recovery axiom. Historical Lean wrappers now
   require an explicit, unvalidated full-enumeration premise. Describe binomial
   results as support counts and softmax as output validity, with compatibility

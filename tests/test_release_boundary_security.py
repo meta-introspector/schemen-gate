@@ -32,7 +32,7 @@ def test_lossless_folding_is_not_exposed_as_a_gate() -> None:
     assert not hasattr(schemen_gate, "fold_and_gate")
 
     module_doc = schemen_gate.fold_vector.__module__
-    assert module_doc == "schemen_gate._regime0_fold"
+    assert module_doc == "schemen_gate._row_folding"
     assert "not a security boundary" in (schemen_gate.fold_vector.__doc__ or "").lower()
 
 
